@@ -1,0 +1,51 @@
+{
+    "name": "fivelab/amqp-bundle",
+    "description": "The bundle for integrate fivelab/amqp library with Symfony application",
+    "keywords": ["amqp", "publisher", "bundle", "consumer", "receiver"],
+    "type": "library",
+    "license": "MIT",
+
+    "authors": [
+        {
+            "name": "Vitalii Zhuk",
+            "email": "v.zhuk@fivelab.org"
+        },
+
+        {
+            "name": "FiveLab Team",
+            "email": "dev@fivelab.org",
+            "homepage": "https://fivelab.org"
+        }
+    ],
+
+    "require": {
+        "php": "^7.1",
+        "fivelab/amqp": "dev-master",
+        "symfony/dependency-injection": "~3.4",
+        "symfony/framework-bundle": "~3.4"
+    },
+
+    "require-dev": {
+        "ext-amqp": "*",
+        "phpunit/phpunit": "~8.0.0",
+        "phpmetrics/phpmetrics": "^2.0",
+        "escapestudios/symfony2-coding-standard": "~3.5.0",
+        "matthiasnoback/symfony-dependency-injection-test": "~4.0.0"
+    },
+
+    "autoload": {
+        "psr-4": {
+            "FiveLab\\Bundle\\AmqpBundle\\": "src/"
+        }
+    },
+
+    "autoload-dev": {
+        "psr-4": {
+            "FiveLab\\Bundle\\AmqpBundle\\Tests\\": "tests/"
+        }
+    },
+
+    "config": {
+        "bin-dir": "bin"
+    }
+}

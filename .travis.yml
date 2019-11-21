@@ -1,0 +1,26 @@
+sudo: required
+
+services:
+    - docker
+
+before_script:
+    - docker build -t amqp-bundle .
+    - docker run -it -d --name amqp-bundle amqp-bundle
+
+script:
+    - docker cp . amqp-bundle:/code
+    - docker exec amqp-bundle composer update --prefer-stable
+    - docker exec amqp-bundle bin/phpcs --config-set show_warnings 0
+    - docker exec amqp-bundle bin/phpcs --standard=vendor/escapestudios/symfony2-coding-standard/Symfony/ src/
+    - docker exec amqp-bundle bin/phpcs --standard=tests/phpcs-ruleset.xml tests/
+
+    # Test on stable vendors
+    - docker exec amqp-bundle bin/phpunit
+
+    # Test on lowest vendors
+    - docker exec amqp-bundle composer update --prefer-lowest
+    - docker exec amqp-bundle bin/phpunit
+
+after_script:
+    - docker kill $(docker ps -q)
+    - docker rm $(docker ps -a -q)
