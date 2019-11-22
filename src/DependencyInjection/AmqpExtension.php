@@ -399,8 +399,8 @@ class AmqpExtension extends Extension
 
             $queueDefinitionServiceDefinition
                 ->replaceArgument(0, $queue['name'])
-                ->replaceArgument(1, $bindingsServiceId)
-                ->replaceArgument(2, $unbindingsServiceId)
+                ->replaceArgument(1, new Reference($bindingsServiceId))
+                ->replaceArgument(2, new Reference($unbindingsServiceId))
                 ->replaceArgument(3, (bool) $queue['durable'])
                 ->replaceArgument(4, (bool) $queue['passive'])
                 ->replaceArgument(5, (bool) $queue['exclusive'])

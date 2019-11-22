@@ -182,9 +182,10 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         $this->expectExceptionMessage('Invalid configuration for path "fivelab_amqp.exchanges.default.type": Invalid exchange type ""foo"".');
 
         $this->load([
-            'exchanges'   => [
+            'exchanges' => [
                 'default' => [
-                    'type' => 'foo',
+                    'connection' => 'default',
+                    'type'       => 'foo',
                 ],
             ],
         ]);
