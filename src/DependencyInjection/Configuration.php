@@ -361,7 +361,7 @@ class Configuration implements ConfigurationInterface
 
                 ->scalarNode('connection')
                     ->info('The name of connection.')
-                    ->defaultValue('@default')
+                    ->isRequired()
                 ->end()
 
                 ->scalarNode('type')

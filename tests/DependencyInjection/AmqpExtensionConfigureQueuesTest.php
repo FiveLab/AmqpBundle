@@ -80,8 +80,8 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
 
         self::assertEquals([
             'default',
-            [],
-            [],
+            'fivelab.amqp.queue_definition.default.bindings',
+            'fivelab.amqp.queue_definition.default.unbindings',
             true,
             false,
             false,
@@ -112,8 +112,8 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
 
         self::assertEquals([
             'my-test',
-            [],
-            [],
+            'fivelab.amqp.queue_definition.default.bindings',
+            'fivelab.amqp.queue_definition.default.unbindings',
             false,
             true,
             true,
@@ -141,10 +141,14 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
 
         $queueDefinition = $this->container->getDefinition('fivelab.amqp.queue_definition.default');
 
+        self::assertEquals(new Reference('fivelab.amqp.queue_definition.default.bindings'), $queueDefinition->getArgument(1));
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.queue_definition.default.bindings');
+
         self::assertEquals([
             new Reference('fivelab.amqp.queue_definition.default.binding.test_foo'),
             new Reference('fivelab.amqp.queue_definition.default.binding.test_bar'),
-        ], $queueDefinition->getArgument(1));
+        ], \array_values($this->container->getDefinition('fivelab.amqp.queue_definition.default.bindings')->getArguments()));
 
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(
             'fivelab.amqp.queue_definition.default.binding.test_foo',
@@ -190,10 +194,14 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
 
         $queueDefinition = $this->container->getDefinition('fivelab.amqp.queue_definition.default');
 
+        self::assertEquals(new Reference('fivelab.amqp.queue_definition.default.unbindings'), $queueDefinition->getArgument(2));
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.queue_definition.default.unbindings');
+
         self::assertEquals([
             new Reference('fivelab.amqp.queue_definition.default.unbinding.test_foo'),
             new Reference('fivelab.amqp.queue_definition.default.unbinding.test_bar'),
-        ], $queueDefinition->getArgument(2));
+        ], \array_values($this->container->getDefinition('fivelab.amqp.queue_definition.default.unbindings')->getArguments()));
 
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(
             'fivelab.amqp.queue_definition.default.unbinding.test_foo',

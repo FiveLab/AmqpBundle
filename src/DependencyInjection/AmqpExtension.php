@@ -286,6 +286,8 @@ class AmqpExtension extends Extension
         foreach ($queues as $key => $queue) {
             // Configure bindings
             $bindingReferences = [];
+            $bindingsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.bindings', $key);
+            $bindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.queue_binding_collection');
 
             foreach ($queue['bindings'] as $binding) {
                 $bindingServiceId = \sprintf(
@@ -305,7 +307,12 @@ class AmqpExtension extends Extension
                 $bindingReferences[] = new Reference($bindingServiceId);
             }
 
+            $bindingsServiceDefinition->setArguments($bindingReferences);
+            $container->setDefinition($bindingsServiceId, $bindingsServiceDefinition);
+
             $unbingingReferences = [];
+            $unbindingsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.unbindings', $key);
+            $unbindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.queue_binding_collection');
 
             foreach ($queue['unbindings'] as $unbinding) {
                 $unbindingServiceId = \sprintf(
@@ -324,6 +331,9 @@ class AmqpExtension extends Extension
 
                 $unbingingReferences[] = new Reference($unbindingServiceId);
             }
+
+            $unbindingsServiceDefinition->setArguments($unbingingReferences);
+            $container->setDefinition($unbindingsServiceId, $unbindingsServiceDefinition);
 
             // Create argument collection
             $argumentCollectionServiceId = null;
@@ -389,8 +399,8 @@ class AmqpExtension extends Extension
 
             $queueDefinitionServiceDefinition
                 ->replaceArgument(0, $queue['name'])
-                ->replaceArgument(1, $bindingReferences)
-                ->replaceArgument(2, $unbingingReferences)
+                ->replaceArgument(1, $bindingsServiceId)
+                ->replaceArgument(2, $unbindingsServiceId)
                 ->replaceArgument(3, (bool) $queue['durable'])
                 ->replaceArgument(4, (bool) $queue['passive'])
                 ->replaceArgument(5, (bool) $queue['exclusive'])
