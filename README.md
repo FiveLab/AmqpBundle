@@ -1,6 +1,8 @@
 AMQP Bundle
 ===========
 
+[![Build Status](https://travis-ci.org/FiveLab/AmqpBundle.svg?branch=master)](https://travis-ci.org/FiveLab/AmqpBundle)
+
 Integrate the [AMQP](https://github.com/FiveLab/Amqp) library with you Symfony application.
 
 Development
