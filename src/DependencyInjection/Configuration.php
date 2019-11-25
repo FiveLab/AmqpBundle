@@ -49,7 +49,9 @@ class Configuration implements ConfigurationInterface
                 ->append($this->getExchangesNodeDefinition())
                 ->append($this->getQueuesNodeDefinition())
                 ->append($this->getConsumersNodeDefinition())
+                ->append($this->getPublishersNodeDefinition())
                 ->append($this->getMiddlewareNodeDefinition('consumer_'))
+                ->append($this->getMiddlewareNodeDefinition('publisher_'))
             ->end();
 
         return $treeBuilder;
@@ -240,6 +242,34 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+            ->end();
+
+        return $node;
+    }
+
+    /**
+     * Get publishers node definition
+     *
+     * @return NodeDefinition
+     */
+    private function getPublishersNodeDefinition(): NodeDefinition
+    {
+        $node = new ArrayNodeDefinition('publishers');
+
+        $node
+            ->defaultValue([]);
+
+        /** @var ArrayNodeDefinition $prototypeNode */
+        $prototypeNode = $node->prototype('array');
+
+        $prototypeNode
+            ->children()
+                ->scalarNode('exchange')
+                    ->isRequired()
+                    ->info('The key of exchange.')
+                ->end()
+
+                ->append($this->getMiddlewareNodeDefinition())
             ->end();
 
         return $node;

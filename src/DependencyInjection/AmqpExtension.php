@@ -88,6 +88,7 @@ class AmqpExtension extends Extension
         $loader->load('factories.xml');
         $loader->load('definitions.xml');
         $loader->load('consumers.xml');
+        $loader->load('publishers.xml');
         $loader->load('services.xml');
 
         if ('php_extension' === $config['driver']) {
@@ -97,6 +98,7 @@ class AmqpExtension extends Extension
         $this->configureConnections($container, $config['connections']);
         $this->configureExchanges($container, $config['exchanges']);
         $this->configureQueues($container, $config['queues']);
+        $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
         $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware']);
 
         $container->getDefinition('fivelab.amqp.console_command.initialize_exchanges')
@@ -542,6 +544,58 @@ class AmqpExtension extends Extension
             ]);
 
             $this->consumers[$key] = new Reference($consumerServiceId);
+        }
+    }
+
+    /**
+     * Configure publishers
+     *
+     * @param ContainerBuilder $container
+     * @param array            $publishers
+     * @param array            $globalMiddlewares
+     */
+    private function configurePublishers(ContainerBuilder $container, array $publishers, array $globalMiddlewares): void
+    {
+        $publishersRegistryDefinition = $container->getDefinition('fivelab.amqp.publisher_registry');
+
+        foreach ($publishers as $key => $publisher) {
+            if (!\array_key_exists($publisher['exchange'], $this->exchangeFactories)) {
+                throw new \InvalidArgumentException(\sprintf(
+                    'The publisher "%s" try to use "%s" exchange but it exchange was not declared.',
+                    $key,
+                    $publisher['exchange']
+                ));
+            }
+
+            $exchangeFactoryServiceId = $this->exchangeFactories[$publisher['exchange']];
+
+            // Configure middleware for consumer
+            $publisherMiddlewares = \array_merge($globalMiddlewares, $publisher['middleware']);
+
+            $middlewareList = \array_map(function (string $serviceId) {
+                return new Reference($serviceId);
+            }, $publisherMiddlewares);
+
+            $middlewareServiceId = \sprintf('fivelab.amqp.publisher.%s.middlewares', $key);
+            $middlewareServiceDefinition = $this->createChildDefinition('fivelab.amqp.publisher.middleware_collection.abstract');
+            $middlewareServiceDefinition->setArguments($middlewareList);
+
+            $container->setDefinition($middlewareServiceId, $middlewareServiceDefinition);
+
+            // Configure publisher
+            $publisherServiceId = \sprintf('fivelab.amqp.publisher.%s', $key);
+            $publisherServiceDefinition = $this->createChildDefinition('fivelab.amqp.publisher.abstract');
+
+            $publisherServiceDefinition
+                ->replaceArgument(0, new Reference($exchangeFactoryServiceId))
+                ->replaceArgument(1, new Reference($middlewareServiceId));
+
+            $container->setDefinition($publisherServiceId, $publisherServiceDefinition);
+
+            $publishersRegistryDefinition->addMethodCall('add', [
+                $key,
+                new Reference($publisherServiceId),
+            ]);
         }
     }
 

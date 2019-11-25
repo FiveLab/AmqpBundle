@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        http://symfony.com/schema/dic/services/services-1.0.xsd"
+>
+    <parameters>
+        <parameter key="fivelab.amqp.publisher.class">FiveLab\Component\Amqp\Publisher\Publisher</parameter>
+        <parameter key="fivelab.amqp.publisher.middleware_collection.class">FiveLab\Component\Amqp\Publisher\Middleware\PublisherMiddlewareCollection</parameter>
+    </parameters>
+
+    <services>
+        <!-- Publisher -->
+        <service id="fivelab.amqp.publisher.abstract" class="%fivelab.amqp.publisher.class%" abstract="true">
+            <argument /> <!-- Exchange factory -->
+            <argument /> <!-- Middleware collection -->
+        </service>
+
+        <!-- Common services -->
+        <service id="fivelab.amqp.publisher.middleware_collection.abstract" class="%fivelab.amqp.publisher.middleware_collection.class%" abstract="true"/>
+    </services>
+</container>
