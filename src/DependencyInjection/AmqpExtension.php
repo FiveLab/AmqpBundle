@@ -252,7 +252,7 @@ class AmqpExtension extends Extension
                 ->replaceArgument(1, $exchange['type'])
                 ->replaceArgument(2, (bool) $exchange['durable'])
                 ->replaceArgument(3, (bool) $exchange['passive'])
-                ->replaceArgument(4, $argumentCollectionServiceId);
+                ->replaceArgument(4, $argumentCollectionServiceId ? new Reference($argumentCollectionServiceId) : null);
 
             $container->setDefinition($exchangeDefinitionServiceId, $exchangeDefinitionServiceDefinition);
 
