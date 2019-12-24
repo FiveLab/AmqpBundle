@@ -38,10 +38,10 @@
         </service>
 
         <!-- Registries -->
-        <service id="fivelab.amqp.consumer_registry" class="%fivelab.amqp.consumer_registry.class%"/>
-        <service id="fivelab.amqp.exchange_factory_registry" class="%fivelab.amqp.exchange_factory_registry.class%"/>
-        <service id="fivelab.amqp.queue_factory_registry" class="%fivelab.amqp.queue_factory_registry.class%"/>
-        <service id="fivelab.amqp.connection_factory_registry" class="%fivelab.amqp.connection_factory_registry.class%"/>
-        <service id="fivelab.amqp.publisher_registry" class="%fivelab.amqp.publisher_registry.class%"/>
+        <service id="fivelab.amqp.consumer_registry" class="%fivelab.amqp.consumer_registry.class%" public="true"/>
+        <service id="fivelab.amqp.exchange_factory_registry" class="%fivelab.amqp.exchange_factory_registry.class%" public="true"/>
+        <service id="fivelab.amqp.queue_factory_registry" class="%fivelab.amqp.queue_factory_registry.class%" public="true"/>
+        <service id="fivelab.amqp.connection_factory_registry" class="%fivelab.amqp.connection_factory_registry.class%" public="true"/>
+        <service id="fivelab.amqp.publisher_registry" class="%fivelab.amqp.publisher_registry.class%" public="true"/>
     </services>
 </container>

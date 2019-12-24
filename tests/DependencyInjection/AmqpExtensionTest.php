@@ -103,4 +103,39 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
             new Reference('fivelab.amqp.consumer.bar'),
         ], $consumer->getArguments());
     }
+
+    /**
+     * @test
+     *
+     * @param string $registry
+     *
+     * @dataProvider providePublicRegistries
+     */
+    public function shouldRegistriesIsPublic(string $registry): void
+    {
+        $this->load([]);
+
+        $definition = $this->container->getDefinition($registry);
+
+        self::assertTrue($definition->isPublic(), \sprintf(
+            'The service "%s" must be public.',
+            $registry
+        ));
+    }
+
+    /**
+     * Provide data for testing public registries
+     *
+     * @return array
+     */
+    public function providePublicRegistries(): array
+    {
+        return [
+            ['fivelab.amqp.consumer_registry'],
+            ['fivelab.amqp.exchange_factory_registry'],
+            ['fivelab.amqp.queue_factory_registry'],
+            ['fivelab.amqp.connection_factory_registry'],
+            ['fivelab.amqp.publisher_registry'],
+        ];
+    }
 }
