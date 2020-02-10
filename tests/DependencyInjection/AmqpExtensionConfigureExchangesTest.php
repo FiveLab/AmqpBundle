@@ -183,9 +183,9 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
                 'default' => [
                     'connection' => 'default',
                     'type'       => 'direct',
-                    'bindings' => [
+                    'bindings'   => [
                         ['exchange' => 'foo', 'routing' => 'foo.some'],
-                        ['exchange' => 'bar', 'routing' => 'bar.some']
+                        ['exchange' => 'bar', 'routing' => 'bar.some'],
                     ],
                 ],
             ],
@@ -239,7 +239,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
                     'type'       => 'direct',
                     'unbindings' => [
                         ['exchange' => 'foo', 'routing' => 'foo.some'],
-                        ['exchange' => 'bar', 'routing' => 'bar.some']
+                        ['exchange' => 'bar', 'routing' => 'bar.some'],
                     ],
                 ],
             ],
