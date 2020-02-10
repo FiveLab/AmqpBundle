@@ -209,6 +209,57 @@ class AmqpExtension extends Extension
                 ));
             }
 
+            // Configure bindings
+            $bindingReferences = [];
+            $bindingsServiceId = \sprintf('fivelab.amqp.exchange_definition.%s.bindings', $key);
+            $bindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding_collection');
+
+            foreach ($exchange['bindings'] as $binding) {
+                $bindingServiceId = \sprintf(
+                    'fivelab.amqp.exchange_definition.%s.binding.%s_%s',
+                    $key,
+                    $binding['exchange'],
+                    $binding['routing']
+                );
+
+                $bindingServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding.abstract');
+                $bindingServiceDefinition
+                    ->replaceArgument(0, $binding['exchange'])
+                    ->replaceArgument(1, $binding['routing']);
+
+                $container->setDefinition($bindingServiceId, $bindingServiceDefinition);
+
+                $bindingReferences[] = new Reference($bindingServiceId);
+            }
+
+            $bindingsServiceDefinition->setArguments($bindingReferences);
+            $container->setDefinition($bindingsServiceId, $bindingsServiceDefinition);
+
+            $unbingingReferences = [];
+            $unbindingsServiceId = \sprintf('fivelab.amqp.exchange_definition.%s.unbindings', $key);
+            $unbindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding_collection');
+
+            foreach ($exchange['unbindings'] as $unbinding) {
+                $unbindingServiceId = \sprintf(
+                    'fivelab.amqp.exchange_definition.%s.unbinding.%s_%s',
+                    $key,
+                    $unbinding['exchange'],
+                    $unbinding['routing']
+                );
+
+                $unbindingServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding.abstract');
+                $unbindingServiceDefinition
+                    ->replaceArgument(0, $unbinding['exchange'])
+                    ->replaceArgument(1, $unbinding['routing']);
+
+                $container->setDefinition($unbindingServiceId, $unbindingServiceDefinition);
+
+                $unbingingReferences[] = new Reference($unbindingServiceId);
+            }
+
+            $unbindingsServiceDefinition->setArguments($unbingingReferences);
+            $container->setDefinition($unbindingsServiceId, $unbindingsServiceDefinition);
+
             // Create exchange arguments
             $argumentCollectionServiceId = null;
 
@@ -252,7 +303,9 @@ class AmqpExtension extends Extension
                 ->replaceArgument(1, $exchange['type'])
                 ->replaceArgument(2, (bool) $exchange['durable'])
                 ->replaceArgument(3, (bool) $exchange['passive'])
-                ->replaceArgument(4, $argumentCollectionServiceId ? new Reference($argumentCollectionServiceId) : null);
+                ->replaceArgument(4, $argumentCollectionServiceId ? new Reference($argumentCollectionServiceId) : null)
+                ->replaceArgument(5, new Reference($bindingsServiceId))
+                ->replaceArgument(6, new Reference($unbindingsServiceId));
 
             $container->setDefinition($exchangeDefinitionServiceId, $exchangeDefinitionServiceDefinition);
 
@@ -289,7 +342,7 @@ class AmqpExtension extends Extension
             // Configure bindings
             $bindingReferences = [];
             $bindingsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.bindings', $key);
-            $bindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.queue_binding_collection');
+            $bindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding_collection');
 
             foreach ($queue['bindings'] as $binding) {
                 $bindingServiceId = \sprintf(
@@ -299,7 +352,7 @@ class AmqpExtension extends Extension
                     $binding['routing']
                 );
 
-                $bindingServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.queue_binding.abstract');
+                $bindingServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding.abstract');
                 $bindingServiceDefinition
                     ->replaceArgument(0, $binding['exchange'])
                     ->replaceArgument(1, $binding['routing']);
@@ -314,7 +367,7 @@ class AmqpExtension extends Extension
 
             $unbingingReferences = [];
             $unbindingsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.unbindings', $key);
-            $unbindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.queue_binding_collection');
+            $unbindingsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding_collection');
 
             foreach ($queue['unbindings'] as $unbinding) {
                 $unbindingServiceId = \sprintf(
@@ -324,7 +377,7 @@ class AmqpExtension extends Extension
                     $unbinding['routing']
                 );
 
-                $unbindingServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.queue_binding.abstract');
+                $unbindingServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.binding.abstract');
                 $unbindingServiceDefinition
                     ->replaceArgument(0, $unbinding['exchange'])
                     ->replaceArgument(1, $unbinding['routing']);

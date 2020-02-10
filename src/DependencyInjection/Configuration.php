@@ -417,6 +417,9 @@ class Configuration implements ConfigurationInterface
                     ->info('Is passive?')
                 ->end()
 
+                ->append($this->getBindingsNodeDefinition('bindings'))
+                ->append($this->getBindingsNodeDefinition('unbindings'))
+
                 ->arrayNode('arguments')
                     ->normalizeKeys(false)
                     ->children()

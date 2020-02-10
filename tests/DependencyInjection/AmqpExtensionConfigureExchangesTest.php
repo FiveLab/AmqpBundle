@@ -176,6 +176,114 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function shouldSuccessConfigureWithBindings(): void
+    {
+        $this->load([
+            'exchanges' => [
+                'default' => [
+                    'connection' => 'default',
+                    'type'       => 'direct',
+                    'bindings' => [
+                        ['exchange' => 'foo', 'routing' => 'foo.some'],
+                        ['exchange' => 'bar', 'routing' => 'bar.some']
+                    ],
+                ],
+            ],
+        ]);
+
+        $queueDefinition = $this->container->getDefinition('fivelab.amqp.exchange_definition.default');
+
+        self::assertEquals(new Reference('fivelab.amqp.exchange_definition.default.bindings'), $queueDefinition->getArgument(5));
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.exchange_definition.default.bindings');
+
+        self::assertEquals([
+            new Reference('fivelab.amqp.exchange_definition.default.binding.foo_foo.some'),
+            new Reference('fivelab.amqp.exchange_definition.default.binding.bar_bar.some'),
+        ], \array_values($this->container->getDefinition('fivelab.amqp.exchange_definition.default.bindings')->getArguments()));
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.binding.foo_foo.some',
+            0,
+            'foo'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.binding.foo_foo.some',
+            1,
+            'foo.some'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.binding.bar_bar.some',
+            0,
+            'bar'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.binding.bar_bar.some',
+            1,
+            'bar.some'
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithUnBindings(): void
+    {
+        $this->load([
+            'exchanges' => [
+                'default' => [
+                    'connection' => 'default',
+                    'type'       => 'direct',
+                    'unbindings' => [
+                        ['exchange' => 'foo', 'routing' => 'foo.some'],
+                        ['exchange' => 'bar', 'routing' => 'bar.some']
+                    ],
+                ],
+            ],
+        ]);
+
+        $queueDefinition = $this->container->getDefinition('fivelab.amqp.exchange_definition.default');
+
+        self::assertEquals(new Reference('fivelab.amqp.exchange_definition.default.unbindings'), $queueDefinition->getArgument(6));
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.exchange_definition.default.unbindings');
+
+        self::assertEquals([
+            new Reference('fivelab.amqp.exchange_definition.default.unbinding.foo_foo.some'),
+            new Reference('fivelab.amqp.exchange_definition.default.unbinding.bar_bar.some'),
+        ], \array_values($this->container->getDefinition('fivelab.amqp.exchange_definition.default.unbindings')->getArguments()));
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.unbinding.foo_foo.some',
+            0,
+            'foo'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.unbinding.foo_foo.some',
+            1,
+            'foo.some'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.unbinding.bar_bar.some',
+            0,
+            'bar'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_definition.default.unbinding.bar_bar.some',
+            1,
+            'bar.some'
+        );
+    }
+
+    /**
+     * @test
+     */
     public function shouldFailConfigureExchangesWithInvalidType(): void
     {
         $this->expectException(InvalidConfigurationException::class);
