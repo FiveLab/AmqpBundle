@@ -107,6 +107,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
 
         // Verify configuration
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 0, true);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 1, 3);
     }
 
     /**
@@ -128,6 +129,27 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         ]);
 
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 0, false);
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureSingleConsumerWithPrefetchCount(): void
+    {
+        $this->load([
+            'consumers' => [
+                'foo' => [
+                    'mode'             => 'single',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                    'options'          => [
+                        'prefetch_count' => 10,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 1, 10);
     }
 
     /**
@@ -166,6 +188,9 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
                     'mode'             => 'spool',
                     'queue'            => 'default',
                     'message_handlers' => 'handler',
+                    'options'          => [
+                        'prefetch_count' => 50,
+                    ],
                 ],
             ],
         ]);
@@ -204,7 +229,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
                     'message_handlers' => 'handler',
                     'options'          => [
                         'requeue_on_error' => false,
-                        'count_messages'   => 100,
+                        'prefetch_count'   => 100,
                         'timeout'          => 60,
                         'read_timeout'     => 120,
                     ],
@@ -250,6 +275,28 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         // Verify configuration
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 0, 300);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 1, true);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, 3);
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureLoopConsumerWithPrefetchCount(): void
+    {
+        $this->load([
+            'consumers' => [
+                'bar' => [
+                    'mode'             => 'loop',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                    'options'          => [
+                        'prefetch_count' => 20,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, 20);
     }
 
     /**

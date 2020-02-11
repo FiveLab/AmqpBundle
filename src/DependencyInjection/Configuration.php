@@ -341,9 +341,9 @@ class Configuration implements ConfigurationInterface
                             ->defaultValue(30)
                         ->end()
 
-                        ->integerNode('count_messages')
-                            ->info('The count messages for flush (use for spool consumers).')
-                            ->defaultValue(50)
+                        ->integerNode('prefetch_count')
+                            ->info('The prefetch count or the count messages for flush (use for spool consumers).')
+                            ->defaultValue(3)
                         ->end()
                     ->end()
                 ->end()
