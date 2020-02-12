@@ -22,6 +22,7 @@
         <!-- Single consumer -->
         <service id="fivelab.amqp.consumer_single.configuration.abstract" class="%fivelab.amqp.consumer_single.configuration.class%" abstract="true">
             <argument/> <!-- Requeue on error? -->
+            <argument/> <!-- Count messages -->
         </service>
 
         <service id="fivelab.amqp.consumer_single.abstract" class="%fivelab.amqp.consumer_single.class%" abstract="true">
@@ -49,6 +50,7 @@
         <!-- Loop consumer -->
         <service id="fivelab.amqp.consumer_loop.configuration.abstract" class="%fivelab.amqp.consumer_loop.configuration.class%" abstract="true">
             <argument/> <!-- Read timeout -->
+            <argument/> <!-- Count messages -->
             <argument/> <!-- Requeue on error? -->
         </service>
 
