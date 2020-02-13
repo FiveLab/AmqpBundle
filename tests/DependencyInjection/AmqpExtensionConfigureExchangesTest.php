@@ -93,6 +93,26 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function shouldSuccessConfigureDefaultExchange(): void
+    {
+        $this->load([
+            'exchanges' => [
+                'default' => [
+                    'connection' => 'default',
+                    'name'       => 'amq.default',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.exchange_definition.default');
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.exchange_definition.default', 0, '');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.exchange_definition.default', 1, 'direct');
+    }
+
+    /**
+     * @test
+     */
     public function shouldSuccessConfigureExchangesWithArguments(): void
     {
         $this->load([

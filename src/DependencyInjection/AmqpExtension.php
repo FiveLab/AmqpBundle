@@ -299,7 +299,7 @@ class AmqpExtension extends Extension
             $exchangeDefinitionServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.exchange.abstract');
 
             $exchangeDefinitionServiceDefinition
-                ->replaceArgument(0, $exchange['name'])
+                ->replaceArgument(0, 'amq.default' === $exchange['name'] ? '' : $exchange['name'])
                 ->replaceArgument(1, $exchange['type'])
                 ->replaceArgument(2, (bool) $exchange['durable'])
                 ->replaceArgument(3, (bool) $exchange['passive'])

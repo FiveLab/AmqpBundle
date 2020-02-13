@@ -383,9 +383,18 @@ class Configuration implements ConfigurationInterface
         $prototypeNode = $node->prototype('array');
 
         $prototypeNode
+            ->beforeNormalization()
+                ->always(static function ($exchangeInfo) {
+                    if ($exchangeInfo['name'] && (!\array_key_exists('type', $exchangeInfo) || !$exchangeInfo['type'])) {
+                        $exchangeInfo['type'] = 'direct';
+                    }
+
+                    return $exchangeInfo;
+                })
+            ->end()
             ->children()
                 ->scalarNode('name')
-                    ->info('The name of exchange.')
+                    ->info('The name of exchange (For use default exchange, please fill "amq.default").')
                     ->isRequired()
                 ->end()
 
