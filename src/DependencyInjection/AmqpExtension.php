@@ -48,11 +48,25 @@ class AmqpExtension extends Extension
     private $connectionFactories = [];
 
     /**
-     * The list of available channels.
+     * The list of available default channels (for each connection).
+     *
+     * @var array
+     */
+    private $defaultChannelFactories = [];
+
+    /**
+     * The list of specific channel factories.
      *
      * @var array
      */
     private $channelFactories = [];
+
+    /**
+     * The list key pair with channel name and connection name.
+     *
+     * @var array
+     */
+    private $channelConnections;
 
     /**
      * The list of available exchange factories
@@ -62,11 +76,25 @@ class AmqpExtension extends Extension
     private $exchangeFactories = [];
 
     /**
+     * List list key pair with exchange name and connection name
+     *
+     * @var array
+     */
+    private $exchangeConnections = [];
+
+    /**
      * The list of available queue factories
      *
      * @var array
      */
     private $queueFactories = [];
+
+    /**
+     * The list key pair with queue name and connection name
+     *
+     * @var array
+     */
+    private $queueConnections = [];
 
     /**
      * The list of available consumers
@@ -78,7 +106,7 @@ class AmqpExtension extends Extension
     /**
      * {@inheritdoc}
      */
-    public function load(array $configs, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
 
@@ -96,6 +124,7 @@ class AmqpExtension extends Extension
         }
 
         $this->configureConnections($container, $config['connections']);
+        $this->configureChannels($container, $config['channels']);
         $this->configureExchanges($container, $config['exchanges']);
         $this->configureQueues($container, $config['queues']);
         $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
@@ -123,7 +152,7 @@ class AmqpExtension extends Extension
     }
 
     /**
-     * Configure connections
+     * Configure connections. For each connection we create a default channel use in exchanges and queues.
      *
      * @param ContainerBuilder $container
      * @param array            $connections
@@ -168,13 +197,13 @@ class AmqpExtension extends Extension
                 new Reference($originConnectionFactoryServiceId),
             ]);
 
-            // Create channel definition service definition
+            // Create default channel definition service definition
             $channelDefinitionServiceId = \sprintf('fivelab.amqp.channel_definition.%s', $key);
             $channelDefinitionServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.channel.abstract');
 
             $container->setDefinition($channelDefinitionServiceId, $channelDefinitionServiceDefinition);
 
-            // Create channel factory service definition
+            // Create default channel factory service definition
             $channelFactoryServiceId = \sprintf('fivelab.amqp.channel_factory.%s', $key);
             $channelFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.channel_factory.abstract');
 
@@ -184,10 +213,51 @@ class AmqpExtension extends Extension
 
             $container->setDefinition($channelFactoryServiceId, $channelFactoryServiceDefinition);
 
-            $this->channelFactories[$key] = $channelFactoryServiceId;
+            $this->defaultChannelFactories[$key] = $channelFactoryServiceId;
         }
 
         $container->setParameter('fivelab.amqp.connection_factories', \array_keys($this->connectionFactories));
+    }
+
+    /**
+     * Configure channels
+     *
+     * @param ContainerBuilder $container
+     * @param array            $channels
+     */
+    private function configureChannels(ContainerBuilder $container, array $channels): void
+    {
+        foreach ($channels as $key => $channel) {
+            $connectionKey = $channel['connection'];
+
+            if (!\array_key_exists($connectionKey, $this->connectionFactories)) {
+                throw new \RuntimeException(\sprintf(
+                    'Can\'t configure channel "%s". Connection "%s" was not found.',
+                    $key,
+                    $connectionKey
+                ));
+            }
+
+            $connectionFactoryServiceId = $this->connectionFactories[$connectionKey];
+
+            // Create channel definition
+            $channelDefinitionServiceId = \sprintf('fivelab.amqp.channel_definition.%s.%s', $connectionKey, $key);
+            $channelDefinitionServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.channel.abstract');
+
+            $container->setDefinition($channelDefinitionServiceId, $channelDefinitionServiceDefinition);
+
+            $channelFactoryServiceId = \sprintf('fivelab.amqp.channel_factory.%s.%s', $connectionKey, $key);
+            $channelFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.channel_factory.abstract');
+
+            $channelFactoryServiceDefinition
+                ->replaceArgument(0, new Reference($connectionFactoryServiceId))
+                ->replaceArgument(1, new Reference($channelDefinitionServiceId));
+
+            $container->setDefinition($channelFactoryServiceId, $channelFactoryServiceDefinition);
+
+            $this->channelFactories[$key] = $channelFactoryServiceId;
+            $this->channelConnections[$key] = $connectionKey;
+        }
     }
 
     /**
@@ -314,12 +384,13 @@ class AmqpExtension extends Extension
             $exchangeFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.exchange_factory.abstract');
 
             $exchangeFactoryServiceDefinition
-                ->replaceArgument(0, new Reference($this->channelFactories[$exchange['connection']]))
+                ->replaceArgument(0, new Reference($this->defaultChannelFactories[$exchange['connection']]))
                 ->replaceArgument(1, new Reference($exchangeDefinitionServiceId));
 
             $container->setDefinition($exchangeFactoryServiceId, $exchangeFactoryServiceDefinition);
 
             $this->exchangeFactories[$key] = $exchangeFactoryServiceId;
+            $this->exchangeConnections[$key] = $exchange['connection'];
 
             $registryDefinition->addMethodCall('add', [
                 $key,
@@ -469,12 +540,13 @@ class AmqpExtension extends Extension
             $queueFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.queue_factory.abstract');
 
             $queueFactoryServiceDefinition
-                ->replaceArgument(0, new Reference($this->channelFactories[$queue['connection']]))
+                ->replaceArgument(0, new Reference($this->defaultChannelFactories[$queue['connection']]))
                 ->replaceArgument(1, new Reference($queueDefinitionServiceId));
 
             $container->setDefinition($queueFactoryServiceId, $queueFactoryServiceDefinition);
 
             $this->queueFactories[$key] = $queueFactoryServiceId;
+            $this->queueConnections[$key] = $queue['connection'];
 
             $queueRegistry->addMethodCall('add', [
                 $key,
@@ -503,7 +575,43 @@ class AmqpExtension extends Extension
                 ));
             }
 
-            $queueFactoryServiceId = $this->queueFactories[$consumer['queue']];
+            if ($consumer['channel']) {
+                // Use specific channel. Create new exchange factory for it.
+                if (!\array_key_exists($consumer['channel'], $this->channelFactories)) {
+                    throw new \RuntimeException(\sprintf(
+                        'Can\'t configure consumer "%s". The channel "%s" was not found.',
+                        $key,
+                        $consumer['channel']
+                    ));
+                }
+
+                $channelConnectionKey = $this->channelConnections[$consumer['channel']];
+                $queueConnectionKey = $this->queueConnections[$consumer['queue']];
+
+                if ($channelConnectionKey !== $queueConnectionKey) {
+                    throw new \RuntimeException(\sprintf(
+                        'Can\'t configure consumer "%s". Different connections for queue and channel. Queue connection is "%s" and channel connection is "%s".',
+                        $key,
+                        $queueConnectionKey,
+                        $channelConnectionKey
+                    ));
+                }
+
+                // Create new queue factory with created exchange definition.
+                $channelFactoryServiceId = $this->channelFactories[$consumer['channel']];
+                $queueDefinitionServiceId = \sprintf('fivelab.amqp.queue_definition.%s', $consumer['queue']);
+
+                $queueFactoryServiceId = \sprintf('fivelab.amqp.queue_factory.%s.%s', $consumer['queue'], $key);
+                $queueFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.queue_factory.abstract');
+
+                $queueFactoryServiceDefinition
+                    ->replaceArgument(0, new Reference($channelFactoryServiceId))
+                    ->replaceArgument(1, new Reference($queueDefinitionServiceId));
+
+                $container->setDefinition($queueFactoryServiceId, $queueFactoryServiceDefinition);
+            } else {
+                $queueFactoryServiceId = $this->queueFactories[$consumer['queue']];
+            }
 
             // Configure middleware for consumer
             $consumerMiddlewares = \array_merge($globalMiddlewares, $consumer['middleware']);
@@ -622,12 +730,49 @@ class AmqpExtension extends Extension
                 ));
             }
 
-            $exchangeFactoryServiceId = $this->exchangeFactories[$publisher['exchange']];
+            if ($publisher['channel']) {
+                // Use specific channel. Create new exchange factory for it.
+                if (!\array_key_exists($publisher['channel'], $this->channelFactories)) {
+                    throw new \RuntimeException(\sprintf(
+                        'Can\'t configure publisher "%s". The channel "%s" was not found.',
+                        $key,
+                        $publisher['channel']
+                    ));
+                }
+
+                $channelConnectionKey = $this->channelConnections[$publisher['channel']];
+                $exchangeConnectionKey = $this->exchangeConnections[$publisher['exchange']];
+
+                if ($channelConnectionKey !== $exchangeConnectionKey) {
+                    throw new \RuntimeException(\sprintf(
+                        'Can\'t configure publisher "%s". Different connections for exchange and channel. Exchange connection is "%s" and channel connection is "%s".',
+                        $key,
+                        $exchangeConnectionKey,
+                        $channelConnectionKey
+                    ));
+                }
+
+                // Create new exchange factory with created exchange definition.
+                $channelFactoryServiceId = $this->channelFactories[$publisher['channel']];
+                $exchangeDefinitionServiceId = \sprintf('fivelab.amqp.exchange_definition.%s', $publisher['exchange']);
+
+                $exchangeFactoryServiceId = \sprintf('fivelab.amqp.exchange_factory.%s.%s', $publisher['exchange'], $key);
+                $exchangeFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.exchange_factory.abstract');
+
+                $exchangeFactoryServiceDefinition
+                    ->replaceArgument(0, new Reference($channelFactoryServiceId))
+                    ->replaceArgument(1, new Reference($exchangeDefinitionServiceId));
+
+                $container->setDefinition($exchangeFactoryServiceId, $exchangeFactoryServiceDefinition);
+            } else {
+                // Use default channel
+                $exchangeFactoryServiceId = $this->exchangeFactories[$publisher['exchange']];
+            }
 
             // Configure middleware for consumer
             $publisherMiddlewares = \array_merge($globalMiddlewares, $publisher['middleware']);
 
-            $middlewareList = \array_map(function (string $serviceId) {
+            $middlewareList = \array_map(static function (string $serviceId) {
                 return new Reference($serviceId);
             }, $publisherMiddlewares);
 

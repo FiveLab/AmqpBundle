@@ -321,4 +321,87 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 0, 60);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 1, false);
     }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithCustomChannel(): void
+    {
+        $this->load([
+            'channels' => [
+                'foo_channel' => [
+                    'connection' => 'default',
+                ],
+            ],
+
+            'consumers' => [
+                'foo' => [
+                    'channel'          => 'foo_channel',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo');
+
+        // Verify what we create new queue factory for consumer
+        $this->assertContainerBuilderHasService('fivelab.amqp.queue_factory.default.foo');
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.queue_factory.default.foo',
+            0,
+            new Reference('fivelab.amqp.channel_factory.default.foo_channel')
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.queue_factory.default.foo',
+            1,
+            new Reference('fivelab.amqp.queue_definition.default')
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldThrowExceptionIfChannelWasNotFound(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Can\'t configure consumer "foo". The channel "foo" was not found.');
+
+        $this->load([
+            'consumers' => [
+                'foo' => [
+                    'channel'          => 'foo',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function shouldThrowExceptionIfChannelHasDifferentConnection(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Can\'t configure consumer "foo". Different connections for queue and channel. Queue connection is "default" and channel connection is "custom".');
+
+        $this->load([
+            'channels' => [
+                'channel' => [
+                    'connection' => 'custom',
+                ],
+            ],
+
+            'consumers' => [
+                'foo' => [
+                    'channel'          => 'channel',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                ],
+            ],
+        ]);
+    }
 }

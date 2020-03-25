@@ -113,4 +113,84 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
             new Reference('middleware-2'),
         ], \array_values($middlewaresDefinition->getArguments()));
     }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithOtherChannel(): void
+    {
+        $this->load([
+            'channels' => [
+                'foo_channel' => [
+                    'connection' => 'default',
+                ],
+            ],
+
+            'publishers' => [
+                'some' => [
+                    'exchange' => 'default',
+                    'channel'  => 'foo_channel',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.publisher.some');
+
+        // Verify what we create new exchange factory
+        $this->assertContainerBuilderHasService('fivelab.amqp.exchange_factory.default.some');
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_factory.default.some',
+            0,
+            new Reference('fivelab.amqp.channel_factory.default.foo_channel')
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.exchange_factory.default.some',
+            1,
+            new Reference('fivelab.amqp.exchange_definition.default')
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldThrowExceptionIfTryToUseUndefinedChannel(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Can\'t configure publisher "some". The channel "foo-bar" was not found.');
+
+        $this->load([
+            'publishers' => [
+                'some' => [
+                    'exchange' => 'default',
+                    'channel'  => 'foo-bar',
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * @test
+     */
+    public function shouldThrowExceptionIfChannelHasDifferentConnection(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Can\'t configure publisher "some". Different connections for exchange and channel. Exchange connection is "default" and channel connection is "custom".');
+
+        $this->load([
+            'channels' => [
+                'some' => [
+                    'connection' => 'custom',
+                ],
+            ],
+
+            'publishers' => [
+                'some' => [
+                    'exchange' => 'default',
+                    'channel'  => 'some',
+                ],
+            ],
+        ]);
+    }
 }

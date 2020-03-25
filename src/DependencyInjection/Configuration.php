@@ -46,6 +46,7 @@ class Configuration implements ConfigurationInterface
 
                 ->append($this->getRoundRobinDefinition())
                 ->append($this->getConnectionsNodeDefinition())
+                ->append($this->getChannelsNodeDefinition())
                 ->append($this->getExchangesNodeDefinition())
                 ->append($this->getQueuesNodeDefinition())
                 ->append($this->getConsumersNodeDefinition())
@@ -269,6 +270,11 @@ class Configuration implements ConfigurationInterface
                     ->info('The key of exchange.')
                 ->end()
 
+                ->scalarNode('channel')
+                    ->defaultValue('')
+                    ->info('The channel for publish messages.')
+                ->end()
+
                 ->append($this->getMiddlewareNodeDefinition())
             ->end();
 
@@ -295,6 +301,11 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('queue')
                     ->isRequired()
                     ->info('The key of queue.')
+                ->end()
+
+                ->scalarNode('channel')
+                    ->defaultValue('')
+                    ->info('The channel for consume on queue.')
                 ->end()
 
                 ->scalarNode('mode')
@@ -446,6 +457,33 @@ class Configuration implements ConfigurationInterface
                             ->end()
                         ->end()
                     ->end()
+                ->end()
+            ->end();
+
+        return $node;
+    }
+
+    /**
+     * Get channels node definition
+     *
+     * @return NodeDefinition
+     */
+    private function getChannelsNodeDefinition(): NodeDefinition
+    {
+        $node = new ArrayNodeDefinition('channels');
+
+        $node
+            ->useAttributeAsKey('name')
+            ->defaultValue([]);
+
+        /** @var ArrayNodeDefinition $prototype */
+        $prototype = $node->prototype('array');
+
+        $prototype
+            ->children()
+                ->scalarNode('connection')
+                    ->isRequired()
+                    ->info('The connection for this channel.')
                 ->end()
             ->end();
 
