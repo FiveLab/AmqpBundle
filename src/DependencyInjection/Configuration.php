@@ -556,6 +556,11 @@ class Configuration implements ConfigurationInterface
                     ->defaultValue(0)
                     ->info('The read timeout of RabbitMQ.')
                 ->end()
+
+                ->scalarNode('heartbeat')
+                    ->defaultValue(0)
+                    ->info('Add hearthbeat functionality.')
+                ->end()
             ->end();
 
         return $node;

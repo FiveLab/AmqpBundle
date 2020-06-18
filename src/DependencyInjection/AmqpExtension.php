@@ -180,6 +180,7 @@ class AmqpExtension extends Extension
                     'login'        => $connection['login'],
                     'password'     => $connection['password'],
                     'read_timeout' => $connection['read_timeout'],
+                    'heartbeat'    => $connection['heartbeat'],
                 ]);
 
                 $container->setDefinition($connectionFactoryServiceId, $connectionFactoryServiceDefinition);
@@ -472,17 +473,17 @@ class AmqpExtension extends Extension
                 $argumentReferences = [[]];
 
                 $possibleArguments = [
-                    'dead-letter-exchange' => DeadLetterExchangeArgument::class,
+                    'dead-letter-exchange'    => DeadLetterExchangeArgument::class,
                     'dead-letter-routing-key' => DeadLetterRoutingKeyArgument::class,
-                    'expires' => ExpiresArgument::class,
-                    'max-length' => MaxLengthArgument::class,
-                    'max-length-bytes' => MaxLengthBytesArgument::class,
-                    'max-priority' => MaxPriorityArgument::class,
-                    'message-ttl' => MessageTtlArgument::class,
-                    'overflow' => OverflowArgument::class,
-                    'queue-master-locator' => QueueMasterLocatorArgument::class,
-                    'queue-mode' => QueueModeArgument::class,
-                    'queue-type' => QueueTypeArgument::class,
+                    'expires'                 => ExpiresArgument::class,
+                    'max-length'              => MaxLengthArgument::class,
+                    'max-length-bytes'        => MaxLengthBytesArgument::class,
+                    'max-priority'            => MaxPriorityArgument::class,
+                    'message-ttl'             => MessageTtlArgument::class,
+                    'overflow'                => OverflowArgument::class,
+                    'queue-master-locator'    => QueueMasterLocatorArgument::class,
+                    'queue-mode'              => QueueModeArgument::class,
+                    'queue-type'              => QueueTypeArgument::class,
                 ];
 
                 foreach ($possibleArguments as $argumentKey => $argumentClass) {

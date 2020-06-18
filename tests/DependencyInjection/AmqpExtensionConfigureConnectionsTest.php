@@ -50,6 +50,7 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
                     'login'        => 'user',
                     'password'     => 'pass',
                     'read_timeout' => 60,
+                    'heartbeat'    => 30,
                 ],
             ],
         ]);
@@ -70,6 +71,7 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
             'login'        => 'foo',
             'password'     => 'bar',
             'read_timeout' => 0,
+            'heartbeat'    => 0,
         ], $connection10->getArgument(0));
 
         // Verify second connection
@@ -88,6 +90,7 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
             'login'        => 'user',
             'password'     => 'pass',
             'read_timeout' => 60,
+            'heartbeat'    => 30,
         ], $connection20->getArgument(0));
 
         $this->assertContainerBuilderHasParameter('fivelab.amqp.connection_factories', [
@@ -118,11 +121,12 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
         $this->load([
             'connections' => [
                 'default' => [
-                    'host'     => ['host1', 'host2'],
-                    'port'     => 5672,
-                    'vhost'    => '/',
-                    'login'    => 'foo',
-                    'password' => 'bar',
+                    'host'      => ['host1', 'host2'],
+                    'port'      => 5672,
+                    'vhost'     => '/',
+                    'login'     => 'foo',
+                    'password'  => 'bar',
+                    'heartbeat' => 60,
                 ],
             ],
         ]);
@@ -145,6 +149,7 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
             'login'        => 'foo',
             'password'     => 'bar',
             'read_timeout' => 0,
+            'heartbeat'    => 60,
         ], $connection1->getArgument(0));
 
         $connection2 = $this->container->getDefinition('fivelab.amqp.connection_factory.default_1');
@@ -156,6 +161,7 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
             'login'        => 'foo',
             'password'     => 'bar',
             'read_timeout' => 0,
+            'heartbeat'    => 60,
         ], $connection2->getArgument(0));
     }
 }
