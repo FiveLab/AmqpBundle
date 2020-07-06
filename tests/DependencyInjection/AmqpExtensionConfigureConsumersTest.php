@@ -94,7 +94,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $definitionAbstract = $this->container->findDefinition('fivelab.amqp.consumer_single.configuration.abstract');
 
         // Verify arguments count
-        $this->assertEquals(\count($definition->getArguments()),\count($definitionAbstract->getArguments()));
+        $this->assertEquals(\count($definition->getArguments()), \count($definitionAbstract->getArguments()));
 
         // Verify consumer
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo', 0, new Reference('fivelab.amqp.queue_factory.default'));
@@ -212,7 +212,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $definitionAbstract = $this->container->findDefinition('fivelab.amqp.consumer_spool.configuration.abstract');
 
         // Verify arguments count
-        $this->assertEquals(\count($definition->getArguments()),\count($definitionAbstract->getArguments()));
+        $this->assertEquals(\count($definition->getArguments()), \count($definitionAbstract->getArguments()));
 
         // Verify consumer
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar', 0, new Reference('fivelab.amqp.queue_factory.default'));
@@ -281,7 +281,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $definitionAbstract = $this->container->findDefinition('fivelab.amqp.consumer_loop.configuration.abstract');
 
         // Verify arguments count
-        $this->assertEquals(\count($definition->getArguments()),\count($definitionAbstract->getArguments()));
+        $this->assertEquals(\count($definition->getArguments()), \count($definitionAbstract->getArguments()));
 
         // Verify consumer
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar', 0, new Reference('fivelab.amqp.queue_factory.default'));

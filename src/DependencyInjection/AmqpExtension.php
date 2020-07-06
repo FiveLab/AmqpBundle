@@ -104,6 +104,20 @@ class AmqpExtension extends Extension
     private $consumers = [];
 
     /**
+     * The list of available publishers
+     *
+     * @var array
+     */
+    private $publishers = [];
+
+    /**
+     * The list of available savepoint publishers
+     *
+     * @var array
+     */
+    private $savepointPublishers = [];
+
+    /**
      * {@inheritdoc}
      */
     public function load(array $configs, ContainerBuilder $container): void
@@ -398,6 +412,8 @@ class AmqpExtension extends Extension
                 new Reference($exchangeFactoryServiceId),
             ]);
         }
+
+        $container->setParameter('fivelab.amqp.exchange_factories', \array_keys($this->exchangeFactories));
     }
 
     /**
@@ -554,6 +570,8 @@ class AmqpExtension extends Extension
                 new Reference($queueFactoryServiceId),
             ]);
         }
+
+        $container->setParameter('fivelab.amqp.queue_factories', \array_keys($this->queueFactories));
     }
 
     /**
@@ -709,6 +727,8 @@ class AmqpExtension extends Extension
 
             $this->consumers[$key] = new Reference($consumerServiceId);
         }
+
+        $container->setParameter('fivelab.amqp.consumers', \array_keys($this->consumers));
     }
 
     /**
@@ -785,11 +805,31 @@ class AmqpExtension extends Extension
 
             // Configure publisher
             $publisherServiceId = \sprintf('fivelab.amqp.publisher.%s', $key);
-            $publisherServiceDefinition = $this->createChildDefinition('fivelab.amqp.publisher.abstract');
 
-            $publisherServiceDefinition
-                ->replaceArgument(0, new Reference($exchangeFactoryServiceId))
-                ->replaceArgument(1, new Reference($middlewareServiceId));
+            if ($publisher['savepoint']) {
+                // Create original publisher
+                $originalPublisherServiceDefinition = $this->createChildDefinition('fivelab.amqp.publisher.abstract');
+
+                $originalPublisherServiceDefinition
+                    ->replaceArgument(0, new Reference($exchangeFactoryServiceId))
+                    ->replaceArgument(1, new Reference($middlewareServiceId));
+
+                $container->setDefinition($publisherServiceId.'.origin', $originalPublisherServiceDefinition);
+
+                // Create decorator
+                $publisherServiceDefinition = $this->createChildDefinition('fivelab.amqp.publisher.savepoint.abstract');
+
+                $publisherServiceDefinition
+                    ->replaceArgument(0, new Reference($publisherServiceId.'.origin'));
+
+                $this->savepointPublishers[$key] = $publisherServiceId;
+            } else {
+                $publisherServiceDefinition = $this->createChildDefinition('fivelab.amqp.publisher.abstract');
+
+                $publisherServiceDefinition
+                    ->replaceArgument(0, new Reference($exchangeFactoryServiceId))
+                    ->replaceArgument(1, new Reference($middlewareServiceId));
+            }
 
             $container->setDefinition($publisherServiceId, $publisherServiceDefinition);
 
@@ -797,7 +837,12 @@ class AmqpExtension extends Extension
                 $key,
                 new Reference($publisherServiceId),
             ]);
+
+            $this->publishers[$key] = $publisherServiceId;
         }
+
+        $container->setParameter('fivelab.amqp.publishers', \array_keys($this->publishers));
+        $container->setParameter('fivelab.amqp.savepoint_publishers', \array_keys($this->savepointPublishers));
     }
 
     /**

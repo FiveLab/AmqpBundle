@@ -275,6 +275,11 @@ class Configuration implements ConfigurationInterface
                     ->info('The channel for publish messages.')
                 ->end()
 
+                ->booleanNode('savepoint')
+                    ->defaultFalse()
+                    ->info('Use savepoint decorator?')
+                ->end()
+
                 ->append($this->getMiddlewareNodeDefinition())
             ->end();
 

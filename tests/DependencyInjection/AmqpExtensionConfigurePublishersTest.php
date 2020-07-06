@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
+use FiveLab\Component\Amqp\Publisher\Publisher;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -46,6 +47,8 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
 
     /**
      * @test
+     *
+     * @group foo
      */
     public function shouldSuccessConfigureWithMinimalConfiguration(): void
     {
@@ -76,6 +79,57 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         $middlewaresDefinition = $this->container->getDefinition('fivelab.amqp.publisher.some.middlewares');
 
         self::assertCount(0, $middlewaresDefinition->getArguments());
+
+        $this->assertContainerBuilderHasParameter('fivelab.amqp.publishers', ['some']);
+        $this->assertContainerBuilderHasParameter('fivelab.amqp.savepoint_publishers', []);
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithSavepoint(): void
+    {
+        $this->load([
+            'publishers' => [
+                'some' => [
+                    'exchange'  => 'default',
+                    'savepoint' => true,
+                ],
+            ],
+        ]);
+
+        // Check origin service
+        $this->assertContainerBuilderHasService('fivelab.amqp.publisher.some.origin');
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.publisher.some.origin',
+            0,
+            new Reference('fivelab.amqp.exchange_factory.default')
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.publisher.some.origin',
+            1,
+            new Reference('fivelab.amqp.publisher.some.middlewares')
+        );
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.publisher.some.middlewares');
+
+        $middlewaresDefinition = $this->container->getDefinition('fivelab.amqp.publisher.some.middlewares');
+
+        self::assertCount(0, $middlewaresDefinition->getArguments());
+
+        // Check decorator service
+        $this->assertContainerBuilderHasService('fivelab.amqp.publisher.some');
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.publisher.some',
+            0,
+            new Reference('fivelab.amqp.publisher.some.origin')
+        );
+
+        $this->assertContainerBuilderHasParameter('fivelab.amqp.publishers', ['some']);
+        $this->assertContainerBuilderHasParameter('fivelab.amqp.savepoint_publishers', ['some']);
     }
 
     /**

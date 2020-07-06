@@ -6,14 +6,19 @@
 >
     <parameters>
         <parameter key="fivelab.amqp.publisher.class">FiveLab\Component\Amqp\Publisher\Publisher</parameter>
+        <parameter key="fivelab.amqp.publisher.savepoint.class">FiveLab\Component\Amqp\Publisher\SavepointPublisherDecorator</parameter>
         <parameter key="fivelab.amqp.publisher.middleware_collection.class">FiveLab\Component\Amqp\Publisher\Middleware\PublisherMiddlewareCollection</parameter>
     </parameters>
 
     <services>
-        <!-- Publisher -->
+        <!-- Publishers -->
         <service id="fivelab.amqp.publisher.abstract" class="%fivelab.amqp.publisher.class%" abstract="true">
             <argument /> <!-- Exchange factory -->
             <argument /> <!-- Middleware collection -->
+        </service>
+
+        <service id="fivelab.amqp.publisher.savepoint.abstract" class="%fivelab.amqp.publisher.savepoint.class%" abstract="true">
+            <argument/> <!-- Original publisher -->
         </service>
 
         <!-- Common services -->
