@@ -47,5 +47,12 @@
 
     "config": {
         "bin-dir": "bin"
+    },
+
+    "extra": {
+        "thanks": {
+            "name": "fivelab/amqp-bundle",
+            "url": "https://github.com/FiveLab/AmqpBundle"
+        }
     }
 }
