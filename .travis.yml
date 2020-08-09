@@ -11,7 +11,7 @@ before_script:
 
 script:
     - sed 's/.*symfony\/dependency-injection.*/"symfony\/dependency-injection":"~5.0",/' composer.json > composer.json
-    - sed 's/.*symfony\/framework-bundle.*/"symfony\/framework-bundle": "~5.0"/' composer.json > composer.json
+    - sed 's/.*symfony\/framework-bundle.*/"symfony\/framework-bundle":"~5.0"/' composer.json > composer.json
 
     - docker cp . amqp-bundle:/code
     - docker exec amqp-bundle composer update --prefer-stable
@@ -26,7 +26,7 @@ script:
 
     # Test on SF 4
     - sed 's/.*symfony\/dependency-injection.*/"symfony\/dependency-injection":"~4.0",/' composer.json > composer.json
-    - sed 's/.*symfony\/framework-bundle.*/"symfony\/framework-bundle": "~4.0"/' composer.json > composer.json
+    - sed 's/.*symfony\/framework-bundle.*/"symfony\/framework-bundle":"~4.0"/' composer.json > composer.json
     - docker exec amqp-bundle composer update --prefer-stable
     - docker exec amqp-bundle bin/phpunit
     - docker exec amqp-bundle composer update --prefer-lowest
@@ -34,7 +34,7 @@ script:
 
     # Test on SF 3
     - sed 's/.*symfony\/dependency-injection.*/"symfony\/dependency-injection":"~3.0",/' composer.json > composer.json
-    - sed 's/.*symfony\/framework-bundle.*/"symfony\/framework-bundle": "~3.0"/' composer.json > composer.json
+    - sed 's/.*symfony\/framework-bundle.*/"symfony\/framework-bundle":"~3.0"/' composer.json > composer.json
     - docker exec amqp-bundle composer update --prefer-stable
     - docker exec amqp-bundle bin/phpunit
     - docker exec amqp-bundle composer update --prefer-lowest
