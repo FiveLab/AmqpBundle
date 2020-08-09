@@ -635,7 +635,7 @@ class AmqpExtension extends Extension
             // Configure middleware for consumer
             $consumerMiddlewares = \array_merge($globalMiddlewares, $consumer['middleware']);
 
-            $middlewareList = \array_map(function (string $serviceId) {
+            $middlewareList = \array_map(static function (string $serviceId) {
                 return new Reference($serviceId);
             }, $consumerMiddlewares);
 
@@ -659,6 +659,11 @@ class AmqpExtension extends Extension
 
             // Configure consumer
             $consumerServiceId = \sprintf('fivelab.amqp.consumer.%s', $key);
+            $tagNameGenerator = null;
+
+            if ($consumer['tag_generator']) {
+                $tagNameGenerator = new Reference($consumer['tag_generator']);
+            }
 
             if ('single' === $consumer['mode']) {
                 // Configure single consumer
@@ -667,7 +672,8 @@ class AmqpExtension extends Extension
 
                 $consumerConfigurationServiceDefinition
                     ->replaceArgument(0, $consumer['options']['requeue_on_error'])
-                    ->replaceArgument(1, $consumer['options']['prefetch_count']);
+                    ->replaceArgument(1, $consumer['options']['prefetch_count'])
+                    ->replaceArgument(2, $tagNameGenerator);
 
                 $consumerServiceDefinition = $this->createChildDefinition('fivelab.amqp.consumer_single.abstract');
 
@@ -685,7 +691,8 @@ class AmqpExtension extends Extension
                     ->replaceArgument(0, $consumer['options']['prefetch_count'])
                     ->replaceArgument(1, $consumer['options']['timeout'])
                     ->replaceArgument(2, $consumer['options']['read_timeout'])
-                    ->replaceArgument(3, $consumer['options']['requeue_on_error']);
+                    ->replaceArgument(3, $consumer['options']['requeue_on_error'])
+                    ->replaceArgument(4, $tagNameGenerator);
 
                 $consumerServiceDefinition = $this->createChildDefinition('fivelab.amqp.consumer_spool.abstract');
 
@@ -701,7 +708,8 @@ class AmqpExtension extends Extension
                 $consumerConfigurationServiceDefinition
                     ->replaceArgument(0, $consumer['options']['read_timeout'])
                     ->replaceArgument(1, $consumer['options']['requeue_on_error'])
-                    ->replaceArgument(2, $consumer['options']['prefetch_count']);
+                    ->replaceArgument(2, $consumer['options']['prefetch_count'])
+                    ->replaceArgument(3, $tagNameGenerator);
 
                 $consumerServiceDefinition = $this->createChildDefinition('fivelab.amqp.consumer_loop.abstract');
 

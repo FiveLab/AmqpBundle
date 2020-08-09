@@ -23,6 +23,7 @@
         <service id="fivelab.amqp.consumer_single.configuration.abstract" class="%fivelab.amqp.consumer_single.configuration.class%" abstract="true">
             <argument/> <!-- Requeue on error? -->
             <argument/> <!-- Count messages -->
+            <argument/> <!-- Tag name generator -->
         </service>
 
         <service id="fivelab.amqp.consumer_single.abstract" class="%fivelab.amqp.consumer_single.class%" abstract="true">
@@ -38,6 +39,7 @@
             <argument/> <!-- Timeout -->
             <argument/> <!-- Read timeout -->
             <argument/> <!-- Requeue on error? -->
+            <argument/> <!-- Tag name generator -->
         </service>
 
         <service id="fivelab.amqp.consumer_spool.abstract" class="%fivelab.amqp.consumer_spool.class%" abstract="true">
@@ -52,6 +54,7 @@
             <argument/> <!-- Read timeout -->
             <argument/> <!-- Count messages -->
             <argument/> <!-- Requeue on error? -->
+            <argument/> <!-- Tag name generator -->
         </service>
 
         <service id="fivelab.amqp.consumer_loop.abstract" class="%fivelab.amqp.consumer_loop.class%" abstract="true">

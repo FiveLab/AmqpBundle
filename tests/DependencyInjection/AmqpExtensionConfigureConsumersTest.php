@@ -116,6 +116,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         // Verify configuration
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 0, true);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 1, 3);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 2, null);
     }
 
     /**
@@ -228,6 +229,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 1, 30);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, 300);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 3, true);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 4, null);
     }
 
     /**
@@ -255,6 +257,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 1, 60);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, 120);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 3, false);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 4, null);
     }
 
     /**
@@ -281,7 +284,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $definitionAbstract = $this->container->findDefinition('fivelab.amqp.consumer_loop.configuration.abstract');
 
         // Verify arguments count
-        $this->assertEquals(\count($definition->getArguments()), \count($definitionAbstract->getArguments()));
+        self::assertEquals(\count($definition->getArguments()), \count($definitionAbstract->getArguments()));
 
         // Verify consumer
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar', 0, new Reference('fivelab.amqp.queue_factory.default'));
@@ -296,6 +299,8 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 0, 300);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 1, true);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, 3);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 3, null);
     }
 
     /**
@@ -379,6 +384,63 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
             1,
             new Reference('fivelab.amqp.queue_definition.default')
         );
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureSingleConsumerWithTagNameGenerator(): void
+    {
+        $this->load([
+            'consumers' => [
+                'bar' => [
+                    'mode'             => 'single',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                    'tag_generator'    => 'some.foo',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, new Reference('some.foo'));
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureLoopConsumerWithTagNameGenerator(): void
+    {
+        $this->load([
+            'consumers' => [
+                'bar' => [
+                    'mode'             => 'loop',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                    'tag_generator'    => 'some.foo',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 3, new Reference('some.foo'));
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureSpoolConsumerWithTagNameGenerator(): void
+    {
+        $this->load([
+            'consumers' => [
+                'bar' => [
+                    'mode'             => 'spool',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                    'tag_generator'    => 'some.foo',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 4, new Reference('some.foo'));
     }
 
     /**
