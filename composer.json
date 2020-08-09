@@ -20,7 +20,7 @@
 
     "require": {
         "php": "^7.1",
-        "fivelab/amqp": "~1.0.0",
+        "fivelab/amqp": "dev-master",
         "symfony/dependency-injection": "~3.0 | ~4.0 | ~5.0",
         "symfony/framework-bundle": "~3.0 | ~4.0 | ~5.0"
     },
@@ -30,7 +30,8 @@
         "phpunit/phpunit": "~8.0.0",
         "phpmetrics/phpmetrics": "^2.0",
         "escapestudios/symfony2-coding-standard": "~3.5.0",
-        "matthiasnoback/symfony-dependency-injection-test": "~4.0.0"
+        "matthiasnoback/symfony-dependency-injection-test": "~4.0.0",
+        "symfony/console": "~4.0"
     },
 
     "autoload": {

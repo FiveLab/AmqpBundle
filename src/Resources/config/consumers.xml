@@ -14,8 +14,8 @@
         <parameter key="fivelab.amqp.consumer_loop.class">FiveLab\Component\Amqp\Consumer\Loop\LoopConsumer</parameter>
         <parameter key="fivelab.amqp.consumer_loop.configuration.class">FiveLab\Component\Amqp\Consumer\Loop\LoopConsumerConfiguration</parameter>
 
-        <parameter key="fivelab.amqp.consumer.middleware_collection.class">FiveLab\Component\Amqp\Consumer\Middleware\ConsumerMiddlewareCollection</parameter>
-        <parameter key="fivelab.amqp.consumer.message_handler.class">FiveLab\Component\Amqp\Consumer\Handler\MessageHandlerChain</parameter>
+        <parameter key="fivelab.amqp.consumer.middlewares.class">FiveLab\Component\Amqp\Consumer\Middleware\ConsumerMiddlewares</parameter>
+        <parameter key="fivelab.amqp.consumer.message_handler.class">FiveLab\Component\Amqp\Consumer\Handler\MessageHandlers</parameter>
     </parameters>
 
     <services>
@@ -28,7 +28,7 @@
         <service id="fivelab.amqp.consumer_single.abstract" class="%fivelab.amqp.consumer_single.class%" abstract="true">
             <argument/> <!-- Queue factory -->
             <argument/> <!-- Message handler -->
-            <argument/> <!-- Middleware collection -->
+            <argument/> <!-- Middlewares -->
             <argument/> <!-- Configuration -->
         </service>
 
@@ -43,7 +43,7 @@
         <service id="fivelab.amqp.consumer_spool.abstract" class="%fivelab.amqp.consumer_spool.class%" abstract="true">
             <argument/> <!-- Queue factory -->
             <argument/> <!-- Message handler -->
-            <argument/> <!-- Middleware collection -->
+            <argument/> <!-- Middlewares -->
             <argument/> <!-- Configuration -->
         </service>
 
@@ -57,12 +57,12 @@
         <service id="fivelab.amqp.consumer_loop.abstract" class="%fivelab.amqp.consumer_loop.class%" abstract="true">
             <argument/> <!-- Queue factory -->
             <argument/> <!-- Message handler -->
-            <argument/> <!-- Middleware collection -->
+            <argument/> <!-- Middlewares -->
             <argument/> <!-- Configuration -->
         </service>
 
         <!-- Common services -->
         <service id="fivelab.amqp.consumer.message_handler.abstract" class="%fivelab.amqp.consumer.message_handler.class%" abstract="true"/>
-        <service id="fivelab.amqp.consumer.middleware_collection.abstract" class="%fivelab.amqp.consumer.middleware_collection.class%" abstract="true"/>
+        <service id="fivelab.amqp.consumer.middlewares.abstract" class="%fivelab.amqp.consumer.middlewares.class%" abstract="true"/>
     </services>
 </container>

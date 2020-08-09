@@ -9,8 +9,8 @@
         <parameter key="fivelab.amqp.definition.exchange.class">FiveLab\Component\Amqp\Exchange\Definition\ExchangeDefinition</parameter>
         <parameter key="fivelab.amqp.definition.queue.class">FiveLab\Component\Amqp\Queue\Definition\QueueDefinition</parameter>
         <parameter key="fivelab.amqp.definition.binding.class">FiveLab\Component\Amqp\Binding\Definition\BindingDefinition</parameter>
-        <parameter key="fivelab.amqp.definition.binding_collection.class">FiveLab\Component\Amqp\Binding\Definition\BindingCollection</parameter>
-        <parameter key="fivelab.amqp.definition.argument_collection.class">FiveLab\Component\Amqp\Argument\ArgumentCollection</parameter>
+        <parameter key="fivelab.amqp.definition.bindings.class">FiveLab\Component\Amqp\Binding\Definition\BindingDefinitions</parameter>
+        <parameter key="fivelab.amqp.definition.arguments.class">FiveLab\Component\Amqp\Argument\ArgumentDefinitions</parameter>
         <parameter key="fivelab.amqp.definition.argument_definition.class">FiveLab\Component\Amqp\Argument\ArgumentDefinition</parameter>
     </parameters>
 
@@ -20,7 +20,7 @@
             <argument/> <!-- Value -->
         </service>
 
-        <service id="fivelab.amqp.definition.argument_collection.abstract" class="%fivelab.amqp.definition.argument_collection.class%" abstract="true"/>
+        <service id="fivelab.amqp.definition.arguments.abstract" class="%fivelab.amqp.definition.arguments.class%" abstract="true"/>
 
         <service id="fivelab.amqp.definition.channel.abstract" class="%fivelab.amqp.definition.channel.class%" abstract="true"/>
 
@@ -29,7 +29,7 @@
             <argument/> <!-- Type -->
             <argument/> <!-- Durable -->
             <argument/> <!-- Passive -->
-            <argument/> <!-- Arguments (collection) -->
+            <argument/> <!-- Arguments -->
             <argument/> <!-- Bindings -->
             <argument/> <!-- Unbindings -->
         </service>
@@ -42,7 +42,7 @@
             <argument/> <!-- Passive -->
             <argument/> <!-- Exclusive -->
             <argument/> <!-- Auto delete -->
-            <argument/> <!-- Arguments (collection) -->
+            <argument/> <!-- Arguments -->
         </service>
 
         <service id="fivelab.amqp.definition.binding.abstract" class="%fivelab.amqp.definition.binding.class%" abstract="true">
@@ -50,6 +50,6 @@
             <argument/> <!-- Routing key -->
         </service>
 
-        <service id="fivelab.amqp.definition.binding_collection" class="%fivelab.amqp.definition.binding_collection.class%" abstract="true"/>
+        <service id="fivelab.amqp.definition.bindings" class="%fivelab.amqp.definition.bindings.class%" abstract="true"/>
     </services>
 </container>

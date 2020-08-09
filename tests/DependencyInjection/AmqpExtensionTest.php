@@ -40,6 +40,28 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
         $this->addToAssertionCount(1);
     }
 
+    /**
+     * @test
+     */
+    public function shouldAllServiceClassExist():  void
+    {
+        $this->load([]);
+
+        foreach ($this->container->getDefinitions() as $serviceId => $definition) {
+            $class = $definition->getClass();
+            $class = $this->container->getParameterBag()->resolveValue($class);
+
+            self::assertTrue(
+                \class_exists($class) || \interface_exists($class),
+                \sprintf(
+                    'The class "%s" for service "%s" was not found.',
+                    $class,
+                    $serviceId
+                )
+            );
+        }
+    }
+
 
     /**
      * @test
