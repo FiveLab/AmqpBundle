@@ -105,6 +105,7 @@ class Configuration implements ConfigurationInterface
 
         $node
             ->defaultValue([])
+            ->useAttributeAsKey('', false)
             ->beforeNormalization()
                 ->always(static function ($queues) {
                     if (!\is_array($queues)) {
@@ -263,7 +264,8 @@ class Configuration implements ConfigurationInterface
         $node = new ArrayNodeDefinition('publishers');
 
         $node
-            ->defaultValue([]);
+            ->defaultValue([])
+            ->useAttributeAsKey('', false);
 
         /** @var ArrayNodeDefinition $prototypeNode */
         $prototypeNode = $node->prototype('array');
@@ -301,7 +303,8 @@ class Configuration implements ConfigurationInterface
         $node = new ArrayNodeDefinition('consumers');
 
         $node
-            ->defaultValue([]);
+            ->defaultValue([])
+            ->useAttributeAsKey('', false);
 
         /** @var ArrayNodeDefinition $prototypeNode */
         $prototypeNode = $node->prototype('array');
@@ -389,6 +392,7 @@ class Configuration implements ConfigurationInterface
 
         $node
             ->defaultValue([])
+            ->useAttributeAsKey('', false)
             ->beforeNormalization()
                 ->always(static function ($exchanges) {
                     if (!\is_array($exchanges)) {
@@ -488,7 +492,7 @@ class Configuration implements ConfigurationInterface
         $node = new ArrayNodeDefinition('channels');
 
         $node
-            ->useAttributeAsKey('name')
+            ->useAttributeAsKey('', false)
             ->defaultValue([]);
 
         /** @var ArrayNodeDefinition $prototype */
@@ -515,7 +519,7 @@ class Configuration implements ConfigurationInterface
         $node = new ArrayNodeDefinition('connections');
 
         $node
-            ->useAttributeAsKey('name')
+            ->useAttributeAsKey('', false)
             ->requiresAtLeastOneElement()
             ->beforeNormalization()
                 ->ifTrue(static function ($value) {
