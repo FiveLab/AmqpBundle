@@ -22,6 +22,7 @@ fivelab_amqp:
 
     exchanges:
         primary:
+            connection: default
             name: direct
             type: direct
             durable: true
@@ -61,6 +62,63 @@ After initialize exchanges and queues you can run consumer:
 ```
 
 For debug, you can use verbosity levels.
+
+Publish messages
+----------------
+
+For publish messages to broker, we use `Publisher` system. You can configure more publishers.
+
+```php
+<?php
+
+namespace Acme\Controller;
+
+use FiveLab\Component\Amqp\Publisher\PublisherInterface;
+use FiveLab\Component\Amqp\Message\Message;
+use FiveLab\Component\Amqp\Message\Payload;
+
+class MyController 
+{
+    private $publisher;
+
+    public function __construct(PublisherInterface $publisher)
+    {
+        $this->publisher = $publisher;
+    }
+
+    public function handleAction(): void
+    {
+        $payload = new Payload('hello world');
+        $message = new Message($payload);
+        
+        $this->publisher->publish($message, 'customer.register');
+    }   
+}
+```
+
+
+### Transactional
+
+RabbitMQ supports transactional layer, and we implement it. For use transactional layer you must create new channel for
+transactional layer and use this channel in you publisher:
+
+```yaml
+fivelab_amqp:
+    # Configure connections, etc...
+    channels:
+        transactional:
+            connection: default 
+
+    publishers:
+        # Payment publishers
+        primary_transactional:
+            exchange: primary
+            channel: transactional
+            savepoint: false
+```
+
+If you want to use savepoint, you can set `true` for `savepoint`. We implement this functionality 
+(`\FiveLab\Component\Amqp\Publisher\SavepointPublisherDecorator`). 
 
 Development
 -----------
