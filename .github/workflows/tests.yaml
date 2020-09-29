@@ -65,14 +65,8 @@ jobs:
             -   name: Configure Symfony version
                 run: php .github/replace-version.php symfony/framework-bundle "~${{ matrix.symfony }}"
 
-            -   name: Install vendors (stable)
-                run: composer install --prefer-dist
-
-            -   name: Run tests
-                run: bin/phpunit
-
-            -   name: Install vendors (lowest)
-                run: composer update --prefer-lowest
+            -   name: Install vendors
+                run: composer install
 
             -   name: Run tests
                 run: bin/phpunit
