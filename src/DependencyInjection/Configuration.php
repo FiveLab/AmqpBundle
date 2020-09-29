@@ -17,6 +17,7 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
+use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * The configuration definition for AMQP library.
@@ -28,9 +29,13 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder();
-
-        $rootNode = $treeBuilder->root('fivelab_amqp');
+        if (-1 === \version_compare(Kernel::VERSION, '4.2.0')) {
+            $treeBuilder = new TreeBuilder();
+            $rootNode = $treeBuilder->root('fivelab_amqp');
+        } else {
+            $treeBuilder = new TreeBuilder('fivelab_amqp');
+            $rootNode = $treeBuilder->getRootNode();
+        }
 
         $rootNode
             ->children()
