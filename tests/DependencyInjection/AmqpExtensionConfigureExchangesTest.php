@@ -87,6 +87,12 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         // Check factories for topic exchange
         $this->assertContainerBuilderHasService('fivelab.amqp.exchange_factory.topic_passive');
 
+        // Check parameter
+        $this->assertContainerBuilderHasParameter('fivelab.amqp.exchange_factories', [
+            'direct_durable',
+            'topic_passive',
+        ]);
+
         // @todo: check connections
     }
 

@@ -93,6 +93,32 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function shouldSuccessConfigureWithMultipleAndExistParameterForAllQueues(): void
+    {
+        $this->load([
+            'queues' => [
+                'first'  => [
+                    'connection' => 'default',
+                ],
+                'second' => [
+                    'connection' => 'default',
+                ],
+                'third'  => [
+                    'connection' => 'default',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasParameter('fivelab.amqp.queue_factories', [
+            'first',
+            'second',
+            'third',
+        ]);
+    }
+
+    /**
+     * @test
+     */
     public function shouldSuccessConfigureWithCustomConfiguration(): void
     {
         $this->load([
