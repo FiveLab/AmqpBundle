@@ -155,6 +155,12 @@ class AmqpExtension extends Extension
 
             $this->configureRoundRobin($container, $config['round_robin']);
         }
+
+        if (\array_key_exists('delay', $config) && $config['delay']) {
+            $loader->load('delay.xml');
+
+            $this->configureDelay($container, $config['delay'], $config['publisher_middleware'], $config['consumer_middleware']);
+        }
     }
 
     /**
@@ -355,7 +361,7 @@ class AmqpExtension extends Extension
                 $argumentsServiceDefinition = $this->createChildDefinition('fivelab.amqp.definition.arguments.abstract');
                 $argumentReferences = [[]];
 
-                if ($exchangeArguments['alternate-exchange']) {
+                if (\array_key_exists('alternate-exchange', $exchangeArguments) && $exchangeArguments['alternate-exchange']) {
                     $argumentReferences[][] = $this->createArgumentDefinition(
                         $container,
                         \sprintf('fivelab.amqp.exchange_definition.%s.arguments.alternate_exchange', $key),
@@ -364,7 +370,7 @@ class AmqpExtension extends Extension
                     );
                 }
 
-                if (\count($exchangeArguments['custom'])) {
+                if (\array_key_exists('custom', $exchangeArguments) && \count($exchangeArguments['custom'])) {
                     $argumentReferences[] = $this->createCustomArgumentDefinitions(
                         $container,
                         \sprintf('fivelab.amqp.exchange_definition.%s.arguments', $key),
@@ -503,7 +509,7 @@ class AmqpExtension extends Extension
                 ];
 
                 foreach ($possibleArguments as $argumentKey => $argumentClass) {
-                    if ($queueArguments[$argumentKey]) {
+                    if (\array_key_exists($argumentKey, $queueArguments) && $queueArguments[$argumentKey]) {
                         $argumentReferences[][] = $this->createArgumentDefinition(
                             $container,
                             \sprintf('fivelab.amqp.queue_definition.%s.arguments.%s', $key, \str_replace('-', '_', $argumentKey)),
@@ -513,7 +519,7 @@ class AmqpExtension extends Extension
                     }
                 }
 
-                if ($queueArguments['single-active-consumer']) {
+                if (\array_key_exists('single-active-consumer', $queueArguments) && $queueArguments['single-active-consumer']) {
                     $argumentReferences[][] = $this->createArgumentDefinition(
                         $container,
                         \sprintf('fivelab.amqp.queue_definition.%s.arguments.single_active_consumer', $key),
@@ -521,7 +527,7 @@ class AmqpExtension extends Extension
                     );
                 }
 
-                if (\count($queueArguments['custom'])) {
+                if (\array_key_exists('custom', $queueArguments) && \count($queueArguments['custom'])) {
                     $argumentReferences[] = $this->createCustomArgumentDefinitions(
                         $container,
                         \sprintf('fivelab.amqp.queue_definition.%s.arguments', $key),
@@ -548,7 +554,7 @@ class AmqpExtension extends Extension
                 ->replaceArgument(4, (bool) $queue['passive'])
                 ->replaceArgument(5, (bool) $queue['exclusive'])
                 ->replaceArgument(6, (bool) $queue['auto_delete'])
-                ->replaceArgument(7, new Reference($argumentsServiceId));
+                ->replaceArgument(7, $argumentsServiceId ? new Reference($argumentsServiceId) : null);
 
             $container->setDefinition($queueDefinitionServiceId, $queueDefinitionServiceDefinition);
 
@@ -872,6 +878,127 @@ class AmqpExtension extends Extension
 
         $container->getDefinition('fivelab.amqp.round_robin_consumer')
             ->setArguments($roundRobinArguments);
+    }
+
+    /**
+     * Configure delay system
+     *
+     * @param ContainerBuilder $container
+     * @param array            $config
+     * @param array            $globalPublisherMiddlewares
+     * @param array            $globalConsumerMiddlewares
+     */
+    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares): void
+    {
+        // Configure exchange
+        $this->configureExchanges($container, [
+            $config['exchange'] => [
+                'name'       => $config['exchange'],
+                'connection' => $config['connection'],
+                'type'       => 'direct',
+                'durable'    => true,
+                'passive'    => false,
+                'bindings'   => [],
+                'unbindings' => [],
+            ],
+        ]);
+
+        // Configure expired queue
+        $this->configureQueues($container, [
+            $config['expired_queue'] => [
+                'name'        => $config['expired_queue'],
+                'connection'  => $config['connection'],
+                'durable'     => true,
+                'passive'     => false,
+                'exclusive'   => false,
+                'auto_delete' => false,
+                'bindings'    => [
+                    [
+                        'exchange' => $config['exchange'],
+                        'routing'  => 'message.expired',
+                    ],
+                ],
+                'unbindings'  => [],
+            ],
+        ]);
+        foreach ($config['delays'] as $key => $delayInfo) {
+            $this->configureQueues($container, [
+                $delayInfo['queue'] => [
+                    'connection'  => $config['connection'],
+                    'name'        => $delayInfo['queue'],
+                    'durable'     => true,
+                    'passive'     => false,
+                    'exclusive'   => false,
+                    'auto_delete' => false,
+                    'bindings'    => [
+                        ['exchange' => $config['exchange'], 'routing' => $delayInfo['routing']],
+                    ],
+                    'unbindings'  => [],
+                    'arguments'   => [
+                        'queue-type'              => 'classic', # Force use classic because quorum not support TTL for messages.
+                        'dead-letter-exchange'    => $config['exchange'],
+                        'dead-letter-routing-key' => 'message.expired',
+                        'message-ttl'             => $delayInfo['ttl'],
+                    ],
+                ],
+            ]);
+
+            // Add default publisher
+            $delayInfo['publishers'][$key] = [
+                'channel'   => null,
+                'savepoint' => false,
+            ];
+
+            $publisherServiceId = null;
+
+            // Configure publishers
+            foreach ($delayInfo['publishers'] as $publisherKey => $publisherInfo) {
+                $this->configurePublishers($container, [
+                    $publisherKey => [
+                        'exchange'   => $config['exchange'],
+                        'savepoint'  => $publisherInfo['savepoint'],
+                        'channel'    => $publisherInfo['channel'],
+                        'middleware' => [],
+                    ],
+                ], $globalPublisherMiddlewares);
+
+                $publisherServiceId = $this->publishers[$publisherKey];
+
+                $delayPublisherDefinition = $this->createChildDefinition('fivelab.amqp.delay.publisher.abstract');
+                $delayPublisherDefinition
+                    ->replaceArgument(0, new Reference($publisherServiceId.'.delay.inner'))
+                    ->replaceArgument(1, $delayInfo['routing'])
+                    ->setDecoratedService($publisherServiceId);
+
+                $container->setDefinition($publisherServiceId.'.delay', $delayPublisherDefinition);
+            }
+
+            // Configure message handler
+            $messageHandlerServiceId = \sprintf('fivelab.amqp.delay.message_handler.%s', $key);
+            $messageHandlerServiceDefinition = $this->createChildDefinition('fivelab.amqp.delay.message_handler.abstract');
+
+            $messageHandlerServiceDefinition
+                ->replaceArgument(1, new Reference($publisherServiceId.'.delay.inner'))
+                ->replaceArgument(2, $delayInfo['routing']);
+
+            $container->setDefinition($messageHandlerServiceId, $messageHandlerServiceDefinition);
+
+            $this->configureConsumers($container, [
+                $key => [
+                    'queue'            => $delayInfo['queue'],
+                    'mode'             => 'loop',
+                    'channel'          => '',
+                    'message_handlers' => [$messageHandlerServiceId],
+                    'middleware'       => [],
+                    'tag_generator'    => '',
+                    'options'          => [
+                        'read_timeout'     => 300,
+                        'requeue_on_error' => true,
+                        'prefetch_count'   => 3,
+                    ],
+                ],
+            ], $globalConsumerMiddlewares);
+        }
     }
 
     /**

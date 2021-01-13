@@ -49,6 +49,7 @@ class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
 
+                ->append($this->getDelayDefinition())
                 ->append($this->getRoundRobinDefinition())
                 ->append($this->getConnectionsNodeDefinition())
                 ->append($this->getChannelsNodeDefinition())
@@ -61,6 +62,98 @@ class Configuration implements ConfigurationInterface
             ->end();
 
         return $treeBuilder;
+    }
+
+    /**
+     * Create delay definition
+     *
+     * @return NodeDefinition
+     */
+    private function getDelayDefinition(): NodeDefinition
+    {
+        $node = new ArrayNodeDefinition('delay');
+
+        $node
+            ->children()
+                ->scalarNode('exchange')
+                    ->defaultValue('delay')
+                    ->info('The exchange name for use delay system.')
+                ->end()
+
+                ->scalarNode('expired_queue')
+                    ->defaultValue('delay.message_expired')
+                    ->info('The name of queue for expired messages.')
+                ->end()
+
+                ->scalarNode('consumer_key')
+                    ->defaultValue('delay_expired')
+                    ->info('The key of consumer.')
+                ->end()
+
+                ->scalarNode('connection')
+                    ->isRequired()
+                    ->info('The name of connection.')
+                ->end()
+
+                ->arrayNode('delays')
+                    ->requiresAtLeastOneElement()
+                    ->useAttributeAsKey('', false)
+                    ->beforeNormalization()
+                        ->always(static function (array $delays) {
+                            if (!\is_array($delays)) {
+                                return $delays;
+                            }
+
+                            foreach ($delays as $key => $delayInfo) {
+                                if (!\array_key_exists('queue', $delayInfo)) {
+                                    $delays[$key]['queue'] = \sprintf('delay.landfill.%s', $key);
+                                }
+
+                                if (!\array_key_exists('routing', $delayInfo)) {
+                                    $delays[$key]['routing'] = \sprintf('delay.%s', $key);
+                                }
+                            }
+
+                            return $delays;
+                        })
+                    ->end()
+                    ->prototype('array')
+                        ->children()
+                            ->scalarNode('queue')
+                                ->info('The name of queue for landfill.')
+                            ->end()
+
+                            ->scalarNode('routing')
+                                ->info('The routing key for publish message.')
+                            ->end()
+
+                            ->integerNode('ttl')
+                                ->info('The TTL in milliseconds.')
+                                ->isRequired()
+                            ->end()
+
+                            ->arrayNode('publishers')
+                                ->info('The publishers configuration.')
+                                ->prototype('array')
+                                    ->children()
+                                        ->scalarNode('channel')
+                                            ->info('The channel key for create publisher.')
+                                            ->defaultValue(null)
+                                        ->end()
+
+                                        ->booleanNode('savepoint')
+                                            ->info('Use savepoint functionality?')
+                                            ->defaultValue(false)
+                                        ->end()
+                                    ->end()
+                                ->end()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
+            ->end();
+
+        return $node;
     }
 
     /**
