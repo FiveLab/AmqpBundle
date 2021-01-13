@@ -921,6 +921,7 @@ class AmqpExtension extends Extension
                 'unbindings'  => [],
             ],
         ]);
+
         foreach ($config['delays'] as $key => $delayInfo) {
             $this->configureQueues($container, [
                 $delayInfo['queue'] => [
@@ -935,7 +936,7 @@ class AmqpExtension extends Extension
                     ],
                     'unbindings'  => [],
                     'arguments'   => [
-                        'queue-type'              => 'classic', # Force use classic because quorum not support TTL for messages.
+                        'queue-type'              => 'classic', // Force use classic because quorum not support TTL for messages.
                         'dead-letter-exchange'    => $config['exchange'],
                         'dead-letter-routing-key' => 'message.expired',
                         'message-ttl'             => $delayInfo['ttl'],

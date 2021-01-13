@@ -11,7 +11,7 @@
 
     <services>
         <service id="fivelab.amqp.delay.message_handler.abstract" class="%fivelab.amqp.delay.message_handler.class%" abstract="true">
-            <argument id="fivelab.amqp.publisher_registry"/>
+            <argument type="service" id="fivelab.amqp.publisher_registry"/>
             <argument/> <!-- Delay publisher -->
             <argument/> <!-- Landfill routing key -->
         </service>
