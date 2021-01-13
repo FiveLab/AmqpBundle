@@ -144,12 +144,6 @@ class AmqpExtension extends Extension
         $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
         $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware']);
 
-        $container->getDefinition('fivelab.amqp.console_command.initialize_exchanges')
-            ->replaceArgument(1, \array_keys($this->exchangeFactories));
-
-        $container->getDefinition('fivelab.amqp.console_command.initialize_queues')
-            ->replaceArgument(1, \array_keys($this->queueFactories));
-
         if ($config['round_robin']['enable']) {
             $loader->load('round-robin.xml');
 
@@ -161,6 +155,12 @@ class AmqpExtension extends Extension
 
             $this->configureDelay($container, $config['delay'], $config['publisher_middleware'], $config['consumer_middleware']);
         }
+
+        $container->getDefinition('fivelab.amqp.console_command.initialize_exchanges')
+            ->replaceArgument(1, \array_keys($this->exchangeFactories));
+
+        $container->getDefinition('fivelab.amqp.console_command.initialize_queues')
+            ->replaceArgument(1, \array_keys($this->queueFactories));
     }
 
     /**
