@@ -954,7 +954,7 @@ class AmqpExtension extends Extension
 
             // Configure publishers
             foreach ($delayInfo['publishers'] as $publisherKey => $publisherInfo) {
-                $publisherKey = $publisherKey === $key ? $publisherKey : $key.'.'.$publisherKey;
+                $publisherKey = $publisherKey === $key ? $publisherKey : $key.'_'.$publisherKey;
 
                 $this->configurePublishers($container, [
                     $publisherKey => [
