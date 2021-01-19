@@ -55,6 +55,7 @@ class AmqpExtensionConfigureDelaysTest extends AbstractExtensionTestCase
                 'connection'    => 'connection',
                 'exchange'      => 'delay',
                 'expired_queue' => 'delay.expired',
+                'consumer_key'  => 'delay_expired',
                 'delays'        => [
                     '5second' => [
                         'ttl'     => 5000,
@@ -168,18 +169,18 @@ class AmqpExtensionConfigureDelaysTest extends AbstractExtensionTestCase
             'index_2' => '5sec',
         ], $this->container->getDefinition('fivelab.amqp.delay.message_handler.5second')->getArguments());
 
-        // Check consumer
-        $this->assertContainerBuilderHasService('fivelab.amqp.consumer.5second');
+        // Check consumer for handle expired messages
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer.delay_expired');
 
         self::assertEquals([
-            new Reference('fivelab.amqp.queue_factory.delay.5second'),
-            new Reference('fivelab.amqp.consumer.5second.message_handler'),
-            new Reference('fivelab.amqp.consumer.5second.middlewares'),
-            new Reference('fivelab.amqp.consumer.5second.configuration'),
-        ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.5second')->getArguments()));
+            new Reference('fivelab.amqp.queue_factory.delay.expired'),
+            new Reference('fivelab.amqp.consumer.delay_expired.message_handler'),
+            new Reference('fivelab.amqp.consumer.delay_expired.middlewares'),
+            new Reference('fivelab.amqp.consumer.delay_expired.configuration'),
+        ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.delay_expired')->getArguments()));
 
         self::assertEquals([
             new Reference('fivelab.amqp.delay.message_handler.5second'),
-        ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.5second.message_handler')->getArguments()));
+        ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.delay_expired.message_handler')->getArguments()));
     }
 }

@@ -925,6 +925,8 @@ class AmqpExtension extends Extension
             ],
         ]);
 
+        $messageHandlerServiceIds = [];
+
         foreach ($config['delays'] as $key => $delayInfo) {
             $this->configureQueues($container, [
                 $delayInfo['queue'] => [
@@ -981,6 +983,7 @@ class AmqpExtension extends Extension
 
             // Configure message handler
             $messageHandlerServiceId = \sprintf('fivelab.amqp.delay.message_handler.%s', $key);
+            $messageHandlerServiceIds[] = $messageHandlerServiceId;
             $messageHandlerServiceDefinition = $this->createChildDefinition('fivelab.amqp.delay.message_handler.abstract');
 
             $messageHandlerServiceDefinition
@@ -988,23 +991,24 @@ class AmqpExtension extends Extension
                 ->replaceArgument(2, $delayInfo['routing']);
 
             $container->setDefinition($messageHandlerServiceId, $messageHandlerServiceDefinition);
-
-            $this->configureConsumers($container, [
-                $key => [
-                    'queue'            => $delayInfo['queue'],
-                    'mode'             => 'loop',
-                    'channel'          => '',
-                    'message_handlers' => [$messageHandlerServiceId],
-                    'middleware'       => [],
-                    'tag_generator'    => '',
-                    'options'          => [
-                        'read_timeout'     => 300,
-                        'requeue_on_error' => true,
-                        'prefetch_count'   => 3,
-                    ],
-                ],
-            ], $globalConsumerMiddlewares);
         }
+
+        // Configure consumer for handle expired messages
+        $this->configureConsumers($container, [
+            $config['consumer_key'] => [
+                'queue'            => $config['expired_queue'],
+                'mode'             => 'loop',
+                'channel'          => '',
+                'message_handlers' => $messageHandlerServiceIds,
+                'middleware'       => [],
+                'tag_generator'    => '',
+                'options'          => [
+                    'read_timeout'     => 300,
+                    'requeue_on_error' => true,
+                    'prefetch_count'   => 3,
+                ],
+            ],
+        ], $globalConsumerMiddlewares);
     }
 
     /**

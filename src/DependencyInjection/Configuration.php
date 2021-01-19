@@ -87,7 +87,7 @@ class Configuration implements ConfigurationInterface
 
                 ->scalarNode('consumer_key')
                     ->defaultValue('delay_expired')
-                    ->info('The key of consumer.')
+                    ->info('The key of consumer for handle expired messages.')
                 ->end()
 
                 ->scalarNode('connection')
