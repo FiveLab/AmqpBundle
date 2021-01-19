@@ -446,6 +446,33 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
     /**
      * @test
      */
+    public function shouldSuccessAddConsumersToListCommand(): void
+    {
+        $this->load([
+            'consumers' => [
+                'bar' => [
+                    'mode'             => 'loop',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                ],
+                'foo' => [
+                    'mode'             => 'loop',
+                    'queue'            => 'default',
+                    'message_handlers' => 'handler',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.console_command.list_consumers',
+            0,
+            ['bar', 'foo']
+        );
+    }
+
+    /**
+     * @test
+     */
     public function shouldThrowExceptionIfChannelWasNotFound(): void
     {
         $this->expectException(\RuntimeException::class);

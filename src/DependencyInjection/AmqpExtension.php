@@ -161,6 +161,9 @@ class AmqpExtension extends Extension
 
         $container->getDefinition('fivelab.amqp.console_command.initialize_queues')
             ->replaceArgument(1, \array_keys($this->queueFactories));
+
+        $container->getDefinition('fivelab.amqp.console_command.list_consumers')
+            ->replaceArgument(0, \array_keys($this->consumers));
     }
 
     /**
