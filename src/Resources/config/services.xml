@@ -9,7 +9,7 @@
         <parameter key="fivelab.amqp.console_command.run_consumer.class">FiveLab\Component\Amqp\Command\RunConsumerCommand</parameter>
         <parameter key="fivelab.amqp.console_command.initialize_exchanges.class">FiveLab\Component\Amqp\Command\InitializeExchangesCommand</parameter>
         <parameter key="fivelab.amqp.console_command.initialize_queues.class">FiveLab\Component\Amqp\Command\InitializeQueuesCommand</parameter>
-        <parameter key="fivelab.amqp.console_command.list_consumers.class">asd</parameter>
+        <parameter key="fivelab.amqp.console_command.list_consumers.class">FiveLab\Component\Amqp\Command\ListConsumersCommand</parameter>
 
         <!-- Registries -->
         <parameter key="fivelab.amqp.consumer_registry.class">FiveLab\Component\Amqp\Consumer\Registry\ConsumerRegistry</parameter>
