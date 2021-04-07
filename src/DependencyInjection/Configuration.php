@@ -743,10 +743,11 @@ class Configuration implements ConfigurationInterface
      *
      * @return \Closure
      */
-    private static function isBoolOrExpressionClosure(): \Closure {
+    private static function isBoolOrExpressionClosure(): \Closure
+    {
         return static function ($value) {
             if (\is_bool($value)) {
-                return  false;
+                return false;
             }
 
             return \strpos($value, '@=') !== 0;
