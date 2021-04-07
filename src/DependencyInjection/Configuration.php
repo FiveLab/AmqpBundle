@@ -235,8 +235,12 @@ class Configuration implements ConfigurationInterface
                     ->info('Is durable')
                 ->end()
 
-                ->booleanNode('passive')
+                ->scalarNode('passive')
                     ->defaultFalse()
+                    ->validate()
+                        ->ifTrue(self::isBoolOrExpressionClosure())
+                        ->thenInvalid('The param "passive" must be a boolean or string with expression language (start with "@=")')
+                    ->end()
                     ->info('Is passive?')
                 ->end()
 
@@ -544,8 +548,12 @@ class Configuration implements ConfigurationInterface
                     ->info('Is durable?')
                 ->end()
 
-                ->booleanNode('passive')
+                ->scalarNode('passive')
                     ->defaultFalse()
+                    ->validate()
+                        ->ifTrue(self::isBoolOrExpressionClosure())
+                        ->thenInvalid('The param "passive" must be a boolean or string with expression language (start with "@=")')
+                    ->end()
                     ->info('Is passive?')
                 ->end()
 
@@ -728,5 +736,20 @@ class Configuration implements ConfigurationInterface
             ->end();
 
         return $node;
+    }
+
+    /**
+     * Is bool or expression?
+     *
+     * @return \Closure
+     */
+    private static function isBoolOrExpressionClosure(): \Closure {
+        return static function ($value) {
+            if (\is_bool($value)) {
+                return  false;
+            }
+
+            return \strpos($value, '@=') !== 0;
+        };
     }
 }

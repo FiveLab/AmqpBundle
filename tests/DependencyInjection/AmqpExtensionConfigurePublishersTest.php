@@ -46,8 +46,6 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
 
     /**
      * @test
-     *
-     * @group foo
      */
     public function shouldSuccessConfigureWithMinimalConfiguration(): void
     {

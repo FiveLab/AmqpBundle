@@ -33,6 +33,7 @@ use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
 /**
@@ -396,7 +397,7 @@ class AmqpExtension extends Extension
                 ->replaceArgument(0, 'amq.default' === $exchange['name'] ? '' : $exchange['name'])
                 ->replaceArgument(1, $exchange['type'])
                 ->replaceArgument(2, (bool) $exchange['durable'])
-                ->replaceArgument(3, (bool) $exchange['passive'])
+                ->replaceArgument(3, self::resolveBoolOrExpression($exchange['passive']))
                 ->replaceArgument(4, $argumentsServiceId ? new Reference($argumentsServiceId) : null)
                 ->replaceArgument(5, new Reference($bindingsServiceId))
                 ->replaceArgument(6, new Reference($unbindingsServiceId));
@@ -554,7 +555,7 @@ class AmqpExtension extends Extension
                 ->replaceArgument(1, new Reference($bindingsServiceId))
                 ->replaceArgument(2, new Reference($unbindingsServiceId))
                 ->replaceArgument(3, (bool) $queue['durable'])
-                ->replaceArgument(4, (bool) $queue['passive'])
+                ->replaceArgument(4, self::resolveBoolOrExpression($queue['passive']))
                 ->replaceArgument(5, (bool) $queue['exclusive'])
                 ->replaceArgument(6, (bool) $queue['auto_delete'])
                 ->replaceArgument(7, $argumentsServiceId ? new Reference($argumentsServiceId) : null);
@@ -1088,5 +1089,21 @@ class AmqpExtension extends Extension
         }
 
         return new DefinitionDecorator($parentId);
+    }
+
+    /**
+     * Resolve bool or expression object
+     *
+     * @param mixed $value
+     *
+     * @return mixed
+     */
+    private static function resolveBoolOrExpression($value)
+    {
+        if (\is_string($value) && 0 === \strpos($value, '@=')) {
+            return new Expression(\substr($value, 2));
+        }
+
+        return (bool) $value;
     }
 }

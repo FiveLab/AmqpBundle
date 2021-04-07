@@ -19,6 +19,7 @@ use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueTypeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\SingleActiveCustomerArgument;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\ExpressionLanguage\Expression;
 
 class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
 {
@@ -88,6 +89,25 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
             false,
             new Reference('fivelab.amqp.queue_definition.default.arguments'),
         ], \array_values($queueDefinition->getArguments()));
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithExpressionLanguage(): void
+    {
+        $this->load([
+            'queues' => [
+                'default' => [
+                    'connection' => 'default',
+                    'passive' => '@=container.getEnv("FOO")'
+                ],
+            ],
+        ]);
+
+        $queueDefinition = $this->container->getDefinition('fivelab.amqp.queue_definition.default');
+
+        self::assertEquals(new Expression('container.getEnv("FOO")'), $queueDefinition->getArgument(4));
     }
 
     /**

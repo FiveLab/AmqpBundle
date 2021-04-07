@@ -9,6 +9,7 @@ use FiveLab\Component\Amqp\Exchange\Definition\Arguments\AlternateExchangeArgume
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\ExpressionLanguage\Expression;
 
 class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
 {
@@ -94,6 +95,27 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         ]);
 
         // @todo: check connections
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithExpressionLanguage(): void
+    {
+        $this->load([
+            'exchanges' => [
+                'test' => [
+                    'connection' => 'default',
+                    'type'       => 'direct',
+                    'passive'    => '@=container.getEnv("BAR")',
+                ]
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.exchange_definition.test');
+        $testDefinition = $this->container->getDefinition('fivelab.amqp.exchange_definition.test');
+
+        self::assertEquals(new Expression('container.getEnv("BAR")'), $testDefinition->getArgument(3));
     }
 
     /**

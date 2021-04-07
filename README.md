@@ -5,6 +5,8 @@ AMQP Bundle
 
 Integrate the [AMQP](https://github.com/FiveLab/Amqp) library with you Symfony application.
 
+> Note: bundle now support only php_extension driver (amqp extension).
+
 Simple configuration
 --------------------
 
