@@ -108,7 +108,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
                     'connection' => 'default',
                     'type'       => 'direct',
                     'passive'    => '@=container.getEnv("BAR")',
-                ]
+                ],
             ],
         ]);
 

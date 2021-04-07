@@ -100,7 +100,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
             'queues' => [
                 'default' => [
                     'connection' => 'default',
-                    'passive' => '@=container.getEnv("FOO")'
+                    'passive'    => '@=container.getEnv("FOO")',
                 ],
             ],
         ]);
