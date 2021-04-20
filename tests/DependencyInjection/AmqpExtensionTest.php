@@ -40,10 +40,16 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
 
     /**
      * @test
+     *
+     * @param string $driver
+     *
+     * @dataProvider provideDrivers
      */
-    public function shouldAllServiceClassExist():  void
+    public function shouldAllServiceClassExist(string $driver): void
     {
-        $this->load([]);
+        $this->load([
+            'driver' => $driver,
+        ]);
 
         foreach ($this->container->getDefinitions() as $serviceId => $definition) {
             $class = $definition->getClass();
@@ -59,7 +65,6 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
             );
         }
     }
-
 
     /**
      * @test
@@ -156,6 +161,19 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
             ['fivelab.amqp.queue_factory_registry'],
             ['fivelab.amqp.connection_factory_registry'],
             ['fivelab.amqp.publisher_registry'],
+        ];
+    }
+
+    /**
+     * Provide drivers
+     *
+     * @return \string[][]
+     */
+    public function provideDrivers(): array
+    {
+        return [
+            'lib' => ['php_lib'],
+            'ext' => ['php_extension'],
         ];
     }
 }

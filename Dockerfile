@@ -1,4 +1,4 @@
-FROM php:7.2-cli
+FROM php:8.0-cli
 
 MAINTAINER Vitalii Zhuk <v.zhuk@fivelab.org>
 
@@ -11,10 +11,8 @@ RUN \
 # Install additional php extensions
 RUN \
     apt-get install -y --no-install-recommends \
-        librabbitmq-dev && \
-    printf '\n' | pecl install amqp && \
     yes | pecl install xdebug && \
-    docker-php-ext-enable amqp xdebug
+    docker-php-ext-enable xdebug
 
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer

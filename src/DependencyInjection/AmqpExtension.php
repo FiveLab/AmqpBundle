@@ -46,77 +46,77 @@ class AmqpExtension extends Extension
      *
      * @var array
      */
-    private $connectionFactories = [];
+    private array $connectionFactories = [];
 
     /**
      * The list of available default channels (for each connection).
      *
      * @var array
      */
-    private $defaultChannelFactories = [];
+    private array $defaultChannelFactories = [];
 
     /**
      * The list of specific channel factories.
      *
      * @var array
      */
-    private $channelFactories = [];
+    private array $channelFactories = [];
 
     /**
      * The list key pair with channel name and connection name.
      *
      * @var array
      */
-    private $channelConnections;
+    private array $channelConnections;
 
     /**
      * The list of available exchange factories
      *
      * @var array
      */
-    private $exchangeFactories = [];
+    private array $exchangeFactories = [];
 
     /**
      * List list key pair with exchange name and connection name
      *
      * @var array
      */
-    private $exchangeConnections = [];
+    private array $exchangeConnections = [];
 
     /**
      * The list of available queue factories
      *
      * @var array
      */
-    private $queueFactories = [];
+    private array $queueFactories = [];
 
     /**
      * The list key pair with queue name and connection name
      *
      * @var array
      */
-    private $queueConnections = [];
+    private array $queueConnections = [];
 
     /**
      * The list of available consumers
      *
      * @var array
      */
-    private $consumers = [];
+    private array $consumers = [];
 
     /**
      * The list of available publishers
      *
      * @var array
      */
-    private $publishers = [];
+    private array $publishers = [];
 
     /**
      * The list of available savepoint publishers
      *
      * @var array
      */
-    private $savepointPublishers = [];
+    private array $savepointPublishers = [];
 
     /**
      * {@inheritdoc}
@@ -136,6 +136,10 @@ class AmqpExtension extends Extension
 
         if ('php_extension' === $config['driver']) {
             $loader->load('driver/php-extension.xml');
+        }
+
+        if ('php_lib' === $config['driver']) {
+            $loader->load('driver/php-lib.xml');
         }
 
         $this->configureConnections($container, $config['connections']);

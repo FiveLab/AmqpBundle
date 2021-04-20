@@ -17,6 +17,9 @@
         <parameter key="fivelab.amqp.queue_factory_registry.class">FiveLab\Component\Amqp\Queue\Registry\QueueFactoryRegistry</parameter>
         <parameter key="fivelab.amqp.connection_factory_registry.class">FiveLab\Bundle\AmqpBundle\Connection\Registry\ConnectionFactoryRegistry</parameter>
         <parameter key="fivelab.amqp.publisher_registry.class">FiveLab\Component\Amqp\Publisher\Registry\PublisherRegistry</parameter>
+
+        <!-- Common -->
+        <parameter key="fivelab.amqp.spool_connection_factory.class">FiveLab\Component\Amqp\Connection\SpoolConnectionFactory</parameter>
     </parameters>
 
     <services>

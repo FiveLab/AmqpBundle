@@ -6,7 +6,6 @@
 
     <parameters>
         <parameter key="fivelab.amqp.connection_factory.class">FiveLab\Component\Amqp\Adapter\Amqp\Connection\AmqpConnectionFactory</parameter>
-        <parameter key="fivelab.amqp.spool_connection_factory.class">FiveLab\Component\Amqp\Adapter\Amqp\Connection\SpoolAmqpConnectionFactory</parameter>
         <parameter key="fivelab.amqp.channel_factory.class">FiveLab\Component\Amqp\Adapter\Amqp\Channel\AmqpChannelFactory</parameter>
         <parameter key="fivelab.amqp.exchange_factory.class">FiveLab\Component\Amqp\Adapter\Amqp\Exchange\AmqpExchangeFactory</parameter>
         <parameter key="fivelab.amqp.queue_factory.class">FiveLab\Component\Amqp\Adapter\Amqp\Queue\AmqpQueueFactory</parameter>

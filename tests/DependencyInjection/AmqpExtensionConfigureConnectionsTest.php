@@ -5,6 +5,8 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
+use FiveLab\Component\Amqp\Connection\SpoolConnection;
+use FiveLab\Component\Amqp\Connection\SpoolConnectionFactory;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -26,6 +28,26 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
         return [
             'driver' => 'php_extension',
         ];
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessConfigureWithLibAdapter(): void
+    {
+        $this->load([
+            'connections' => [
+                'connection' => [
+                    'host'     => 'host1',
+                    'port'     => 5672,
+                    'vhost'    => '/',
+                    'login'    => 'foo',
+                    'password' => 'bar',
+                ],
+            ],
+        ]);
+
+        $this->addToAssertionCount(1);
     }
 
     /**

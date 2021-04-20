@@ -24,7 +24,7 @@ class ConnectionFactoryRegistry implements ConnectionFactoryRegistryInterface
     /**
      * @var array|ConnectionFactoryInterface
      */
-    private $connectionFactories = [];
+    private array $connectionFactories = [];
 
     /**
      * Add connection factory to registry

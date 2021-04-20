@@ -42,10 +42,10 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('driver')
                     ->isRequired()
                     ->info('The driver for connect to RabbitMQ.')
-                    ->example('extension')
+                    ->example('php_extension')
                     ->validate()
-                        ->ifNotInArray(['php_extension'])
-                        ->thenInvalid('Invalid driver "%s". Available driver: "php_extension".')
+                        ->ifNotInArray(['php_extension', 'php_lib'])
+                        ->thenInvalid('Invalid driver "%s". Available drivers: "php_extension", "php_lib".')
                     ->end()
                 ->end()
 
