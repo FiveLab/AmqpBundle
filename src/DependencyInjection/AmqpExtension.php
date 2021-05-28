@@ -135,15 +135,21 @@ class AmqpExtension extends Extension
         $loader->load('services.xml');
 
         switch ($config['driver']) {
+
             case 'php_extension':
                 $loader->load('driver/php-extension.xml');
                 break;
+
             case 'php_lib':
                 $loader->load('driver/php-lib.xml');
                 break;
+
             case 'php_lib_sockets':
                 $loader->load('driver/php-lib-sockets.xml');
                 break;
+
+            default:
+                $loader->load('driver/php-extension.xml');
         }
 
         $this->configureConnections($container, $config['connections']);
@@ -954,8 +960,7 @@ class AmqpExtension extends Extension
                     ],
                     'unbindings'  => [],
                     'arguments'   => [
-                        'queue-type'              => 'classic',
-                        // Force use classic because quorum not support TTL for messages.
+                        'queue-type'              => 'classic', // Force use classic because quorum not support TTL for messages.
                         'dead-letter-exchange'    => $config['exchange'],
                         'dead-letter-routing-key' => 'message.expired',
                         'message-ttl'             => $delayInfo['ttl'],
