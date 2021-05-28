@@ -134,12 +134,16 @@ class AmqpExtension extends Extension
         $loader->load('publishers.xml');
         $loader->load('services.xml');
 
-        if ('php_extension' === $config['driver']) {
-            $loader->load('driver/php-extension.xml');
-        }
-
-        if ('php_lib' === $config['driver']) {
-            $loader->load('driver/php-lib.xml');
+        switch ($config['driver']) {
+            case 'php_extension':
+                $loader->load('driver/php-extension.xml');
+                break;
+            case 'php_lib':
+                $loader->load('driver/php-lib.xml');
+                break;
+            case 'php_lib_sockets':
+                $loader->load('driver/php-lib-sockets.xml');
+                break;
         }
 
         $this->configureConnections($container, $config['connections']);
@@ -202,13 +206,17 @@ class AmqpExtension extends Extension
                 $connectionFactoryServiceDefinition = $this->createChildDefinition('fivelab.amqp.connection_factory.abstract');
 
                 $connectionFactoryServiceDefinition->replaceArgument(0, [
-                    'host'         => $host,
-                    'port'         => $connection['port'],
-                    'vhost'        => $connection['vhost'],
-                    'login'        => $connection['login'],
-                    'password'     => $connection['password'],
-                    'read_timeout' => $connection['read_timeout'],
-                    'heartbeat'    => $connection['heartbeat'],
+                    'host'                => $host,
+                    'port'                => $connection['port'],
+                    'vhost'               => $connection['vhost'],
+                    'login'               => $connection['login'],
+                    'password'            => $connection['password'],
+                    'read_timeout'        => $connection['read_timeout'],
+                    'heartbeat'           => $connection['heartbeat'],
+                    'insist'              => $connection['insist'],
+                    'keepalive'           => $connection['keepalive'],
+                    'write_timeout'       => $connection['write_timeout'],
+                    'channel_rpc_timeout' => $connection['channel_rpc_timeout'],
                 ]);
 
                 $container->setDefinition($connectionFactoryServiceId, $connectionFactoryServiceDefinition);
@@ -946,7 +954,8 @@ class AmqpExtension extends Extension
                     ],
                     'unbindings'  => [],
                     'arguments'   => [
-                        'queue-type'              => 'classic', // Force use classic because quorum not support TTL for messages.
+                        'queue-type'              => 'classic',
+                        // Force use classic because quorum not support TTL for messages.
                         'dead-letter-exchange'    => $config['exchange'],
                         'dead-letter-routing-key' => 'message.expired',
                         'message-ttl'             => $delayInfo['ttl'],

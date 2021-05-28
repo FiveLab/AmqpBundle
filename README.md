@@ -7,12 +7,12 @@ Integrate the [AMQP](https://github.com/FiveLab/Amqp) library with you Symfony a
 
 > Note: bundle now support only php_extension driver (amqp extension).
 
-Simple configuration
+Sample configuration
 --------------------
 
 ```yaml
 fivelab_amqp:
-    driver: php_extension
+    driver: php_extension           # php_extension|php_lib|php_lib_sockets
 
     connections:
         default: 
@@ -21,6 +21,12 @@ fivelab_amqp:
             vhost: /
             login: guest
             password: guest
+            read_timeout: ~         # default: 0, used as read_write_timeout for php_lib
+            heartbeat: ~            # default: 0
+            # php_lib and php_lib_sockets only:
+            keepalive: ~            # default: false
+            write_timeout: ~        # default: 0, php_lib_sockets only
+            channel_rpc_timeout: ~  # default: 0
 
     exchanges:
         primary:
