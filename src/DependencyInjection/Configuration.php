@@ -44,8 +44,8 @@ class Configuration implements ConfigurationInterface
                     ->info('The driver for connect to RabbitMQ.')
                     ->example('php_extension')
                     ->validate()
-                        ->ifNotInArray(['php_extension', 'php_lib'])
-                        ->thenInvalid('Invalid driver "%s". Available drivers: "php_extension", "php_lib".')
+                        ->ifNotInArray(['php_extension', 'php_lib', 'php_lib_sockets'])
+                        ->thenInvalid('Invalid driver "%s". Available drivers: "php_extension", "php_lib", "php_lib_sockets".')
                     ->end()
                 ->end()
 
@@ -680,6 +680,26 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('heartbeat')
                     ->defaultValue(0)
                     ->info('Add hearthbeat functionality.')
+                ->end()
+
+                ->booleanNode('insist')
+                    ->defaultValue(false)
+                    ->info('php-amqplib option "insist"')
+                ->end()
+
+                ->booleanNode('keepalive')
+                    ->defaultValue(false)
+                    ->info('php-amqplib option for TCP-keepalive')
+                ->end()
+
+                ->scalarNode('write_timeout')
+                    ->defaultValue(0)
+                    ->info('php-amqplib (sockets only) option "write_timeout"')
+                ->end()
+
+                ->scalarNode('channel_rpc_timeout')
+                    ->defaultValue(0)
+                    ->info('php-amqplib option "channel_rpc_timeout"')
                 ->end()
             ->end();
 

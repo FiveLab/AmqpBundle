@@ -172,8 +172,9 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
     public function provideDrivers(): array
     {
         return [
-            'lib' => ['php_lib'],
-            'ext' => ['php_extension'],
+            'lib'         => ['php_lib'],
+            'lib_sockets' => ['php_lib_sockets'],
+            'ext'         => ['php_extension'],
         ];
     }
 }

@@ -5,8 +5,6 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use FiveLab\Component\Amqp\Connection\SpoolConnection;
-use FiveLab\Component\Amqp\Connection\SpoolConnectionFactory;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -87,13 +85,17 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
         $connection10 = $this->container->getDefinition('fivelab.amqp.connection_factory.connection1_0');
 
         self::assertEquals([
-            'host'         => 'host1',
-            'port'         => 5672,
-            'vhost'        => '/',
-            'login'        => 'foo',
-            'password'     => 'bar',
-            'read_timeout' => 0,
-            'heartbeat'    => 0,
+            'host'                => 'host1',
+            'port'                => 5672,
+            'vhost'               => '/',
+            'login'               => 'foo',
+            'password'            => 'bar',
+            'read_timeout'        => 0,
+            'heartbeat'           => 0,
+            'insist'              => false,
+            'keepalive'           => false,
+            'write_timeout'       => 0,
+            'channel_rpc_timeout' => 0,
         ], $connection10->getArgument(0));
 
         // Verify second connection
@@ -106,13 +108,17 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
         $connection20 = $this->container->getDefinition('fivelab.amqp.connection_factory.connection2_0');
 
         self::assertEquals([
-            'host'         => 'host2',
-            'port'         => 5673,
-            'vhost'        => '/bar',
-            'login'        => 'user',
-            'password'     => 'pass',
-            'read_timeout' => 60,
-            'heartbeat'    => 30,
+            'host'                => 'host2',
+            'port'                => 5673,
+            'vhost'               => '/bar',
+            'login'               => 'user',
+            'password'            => 'pass',
+            'read_timeout'        => 60,
+            'heartbeat'           => 30,
+            'insist'              => false,
+            'keepalive'           => false,
+            'write_timeout'       => 0,
+            'channel_rpc_timeout' => 0,
         ], $connection20->getArgument(0));
 
         $this->assertContainerBuilderHasParameter('fivelab.amqp.connection_factories', [
@@ -165,25 +171,33 @@ class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
         $connection1 = $this->container->getDefinition('fivelab.amqp.connection_factory.default_0');
 
         self::assertEquals([
-            'host'         => 'host1',
-            'port'         => 5672,
-            'vhost'        => '/',
-            'login'        => 'foo',
-            'password'     => 'bar',
-            'read_timeout' => 0,
-            'heartbeat'    => 60,
+            'host'                => 'host1',
+            'port'                => 5672,
+            'vhost'               => '/',
+            'login'               => 'foo',
+            'password'            => 'bar',
+            'read_timeout'        => 0,
+            'heartbeat'           => 60,
+            'insist'              => false,
+            'keepalive'           => false,
+            'write_timeout'       => 0,
+            'channel_rpc_timeout' => 0,
         ], $connection1->getArgument(0));
 
         $connection2 = $this->container->getDefinition('fivelab.amqp.connection_factory.default_1');
 
         self::assertEquals([
-            'host'         => 'host2',
-            'port'         => 5672,
-            'vhost'        => '/',
-            'login'        => 'foo',
-            'password'     => 'bar',
-            'read_timeout' => 0,
-            'heartbeat'    => 60,
+            'host'                => 'host2',
+            'port'                => 5672,
+            'vhost'               => '/',
+            'login'               => 'foo',
+            'password'            => 'bar',
+            'read_timeout'        => 0,
+            'heartbeat'           => 60,
+            'insist'              => false,
+            'keepalive'           => false,
+            'write_timeout'       => 0,
+            'channel_rpc_timeout' => 0,
         ], $connection2->getArgument(0));
     }
 }

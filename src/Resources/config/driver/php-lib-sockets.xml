@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        http://symfony.com/schema/dic/services/services-1.0.xsd"
+>
+    <parameters>
+        <parameter key="fivelab.amqp.connection_factory.class">FiveLab\Component\Amqp\Adapter\AmqpLib\Connection\AmqpSocketsConnectionFactory</parameter>
+        <parameter key="fivelab.amqp.channel_factory.class">FiveLab\Component\Amqp\Adapter\AmqpLib\Channel\AmqpChannelFactory</parameter>
+        <parameter key="fivelab.amqp.exchange_factory.class">FiveLab\Component\Amqp\Adapter\AmqpLib\Exchange\AmqpExchangeFactory</parameter>
+        <parameter key="fivelab.amqp.queue_factory.class">FiveLab\Component\Amqp\Adapter\AmqpLib\Queue\AmqpQueueFactory</parameter>
+    </parameters>
+</container>
