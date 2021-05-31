@@ -135,7 +135,6 @@ class AmqpExtension extends Extension
         $loader->load('services.xml');
 
         switch ($config['driver']) {
-
             case 'php_extension':
                 $loader->load('driver/php-extension.xml');
                 break;
@@ -149,7 +148,7 @@ class AmqpExtension extends Extension
                 break;
 
             default:
-                $loader->load('driver/php-extension.xml');
+                throw new \InvalidArgumentException(\sprintf('Invalid driver "%s".', $config['driver']));
         }
 
         $this->configureConnections($container, $config['connections']);
