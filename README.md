@@ -1,8 +1,7 @@
-<div style="text-align: center">
-    <h2>Russia has become a terrorist state.</h2>
-    <div style="font-size: 2em; color: #d0d7de;">
-        <span style="background-color: #54aeff">&nbsp;#StandWith</span><span style="background-color: #d4a72c">Ukraine&nbsp;</span>
-    </div>
+## Russia has become a terrorist state.
+
+<div style="font-size: 2em; color: #d0d7de;">
+    <span style="background-color: #54aeff">&nbsp;#StandWith</span><span style="background-color: #d4a72c">Ukraine&nbsp;</span>
 </div>
 
 
