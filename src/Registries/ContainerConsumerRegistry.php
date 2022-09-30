@@ -21,7 +21,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 /**
  * Simple consumer registry
  */
-class ConsumerRegistry implements ConsumerRegistryInterface
+class ContainerConsumerRegistry implements ConsumerRegistryInterface
 {
     /**
      * @var array|string[]

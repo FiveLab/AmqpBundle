@@ -12,7 +12,7 @@
         <parameter key="fivelab.amqp.console_command.list_consumers.class">FiveLab\Component\Amqp\Command\ListConsumersCommand</parameter>
 
         <!-- Registries -->
-        <parameter key="fivelab.amqp.consumer_registry.class">FiveLab\Bundle\AmqpBundle\Registries\ConsumerRegistry</parameter>
+        <parameter key="fivelab.amqp.consumer_registry.class">FiveLab\Bundle\AmqpBundle\Registries\ContainerConsumerRegistry</parameter>
         <parameter key="fivelab.amqp.exchange_factory_registry.class">FiveLab\Component\Amqp\Exchange\Registry\ExchangeFactoryRegistry</parameter>
         <parameter key="fivelab.amqp.queue_factory_registry.class">FiveLab\Component\Amqp\Queue\Registry\QueueFactoryRegistry</parameter>
         <parameter key="fivelab.amqp.connection_factory_registry.class">FiveLab\Bundle\AmqpBundle\Connection\Registry\ConnectionFactoryRegistry</parameter>
