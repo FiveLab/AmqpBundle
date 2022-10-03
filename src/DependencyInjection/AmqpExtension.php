@@ -755,9 +755,11 @@ class AmqpExtension extends Extension
             $container->setDefinition($consumerConfigurationServiceId, $consumerConfigurationServiceDefinition);
             $container->setDefinition($consumerServiceId, $consumerServiceDefinition);
 
+            $consumerServiceDefinition->setPublic(true);
+
             $consumerRegistryDefinition->addMethodCall('add', [
                 $key,
-                new Reference($consumerServiceId),
+                $consumerServiceId,
             ]);
 
             $this->consumers[$key] = new Reference($consumerServiceId);
