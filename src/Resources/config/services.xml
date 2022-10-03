@@ -50,6 +50,7 @@
         <service id="fivelab.amqp.consumer_registry" class="%fivelab.amqp.consumer_registry.class%" public="true">
             <argument type="service" id="service_container"/>
         </service>
+
         <service id="fivelab.amqp.exchange_factory_registry" class="%fivelab.amqp.exchange_factory_registry.class%" public="true"/>
         <service id="fivelab.amqp.queue_factory_registry" class="%fivelab.amqp.queue_factory_registry.class%" public="true"/>
         <service id="fivelab.amqp.connection_factory_registry" class="%fivelab.amqp.connection_factory_registry.class%" public="true"/>

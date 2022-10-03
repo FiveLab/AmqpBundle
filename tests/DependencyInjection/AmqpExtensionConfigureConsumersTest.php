@@ -5,6 +5,7 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
+use FiveLab\Bundle\AmqpBundle\Registries\ContainerConsumerRegistry;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\Reference;
 
@@ -117,6 +118,13 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 0, true);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 1, 3);
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 2, null);
+
+        // Verify registry
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer_registry', ContainerConsumerRegistry::class);
+        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall('fivelab.amqp.consumer_registry', 'add', [
+            'foo',
+            'fivelab.amqp.consumer.foo',
+        ]);
     }
 
     /**
