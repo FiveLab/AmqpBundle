@@ -28,6 +28,7 @@ use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueTypeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\SingleActiveCustomerArgument;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
+use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\DefinitionDecorator;
@@ -158,7 +159,7 @@ class AmqpExtension extends Extension
         $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
         $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware']);
 
-        if ($config['round_robin']['enable']) {
+        if ($this->isConfigEnabled($container, $config['round_robin'])) {
             $loader->load('round-robin.xml');
 
             $this->configureRoundRobin($container, $config['round_robin']);
@@ -709,7 +710,7 @@ class AmqpExtension extends Extension
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
                     ->replaceArgument(3, new Reference($consumerConfigurationServiceId));
-            } else if ('spool' === $consumer['mode']) {
+            } elseif ('spool' === $consumer['mode']) {
                 // Configure spool consumer
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
                 $consumerConfigurationServiceDefinition = $this->createChildDefinition('fivelab.amqp.consumer_spool.configuration.abstract');
@@ -728,7 +729,7 @@ class AmqpExtension extends Extension
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
                     ->replaceArgument(3, new Reference($consumerConfigurationServiceId));
-            } else if ('loop' === $consumer['mode']) {
+            } elseif ('loop' === $consumer['mode']) {
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
                 $consumerConfigurationServiceDefinition = $this->createChildDefinition('fivelab.amqp.consumer_loop.configuration.abstract');
 
@@ -755,15 +756,12 @@ class AmqpExtension extends Extension
             $container->setDefinition($consumerConfigurationServiceId, $consumerConfigurationServiceDefinition);
             $container->setDefinition($consumerServiceId, $consumerServiceDefinition);
 
-            $consumerServiceDefinition->setPublic(true);
-
-            $consumerRegistryDefinition->addMethodCall('add', [
-                $key,
-                $consumerServiceId,
-            ]);
-
             $this->consumers[$key] = new Reference($consumerServiceId);
         }
+
+        $locatorRef = ServiceLocatorTagPass::register($container, $this->consumers);
+
+        $consumerRegistryDefinition->replaceArgument(0, $locatorRef);
 
         $container->setParameter('fivelab.amqp.consumers', \array_keys($this->consumers));
     }
@@ -895,12 +893,8 @@ class AmqpExtension extends Extension
             ->replaceArgument(1, $config['consumers_read_timeout'])
             ->replaceArgument(2, 0);
 
-        $roundRobinArguments = \array_merge([
-            new Reference('fivelab.amqp.round_robin_consumer.configuration'),
-        ], \array_values($this->consumers));
-
         $container->getDefinition('fivelab.amqp.round_robin_consumer')
-            ->setArguments($roundRobinArguments);
+            ->replaceArgument(2, \array_keys($this->consumers));
     }
 
     /**

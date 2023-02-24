@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the FiveLab AmqpBundle package
+ *
+ * (c) FiveLab
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code
+ */
+
 declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
@@ -10,6 +19,16 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionTest extends AbstractExtensionTestCase
 {
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->container->setParameter('kernel.debug', false);
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -80,7 +99,7 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
             ],
 
             'round_robin' => [
-                'enable'                         => true,
+                'enabled'                        => true,
                 'executes_messages_per_consumer' => 50,
                 'consumers_read_timeout'         => 5.0,
             ],
@@ -124,9 +143,23 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
 
         self::assertEquals([
             new Reference('fivelab.amqp.round_robin_consumer.configuration'),
-            new Reference('fivelab.amqp.consumer.foo'),
-            new Reference('fivelab.amqp.consumer.bar'),
+            new Reference('fivelab.amqp.consumer_registry'),
+            ['foo', 'bar'],
         ], $consumer->getArguments());
+    }
+
+    /**
+     * @test
+     */
+    public function shouldSuccessNoConfigureRoundRobin(): void
+    {
+        $this->load([
+            'round_robin' => [
+                'enabled' => false,
+            ],
+        ]);
+
+        $this->assertContainerBuilderNotHasService('fivelab.amqp.round_robin_consumer');
     }
 
     /**

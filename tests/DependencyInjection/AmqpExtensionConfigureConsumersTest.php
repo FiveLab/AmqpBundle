@@ -1,16 +1,35 @@
 <?php
 
+/*
+ * This file is part of the FiveLab AmqpBundle package
+ *
+ * (c) FiveLab
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code
+ */
+
 declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use FiveLab\Bundle\AmqpBundle\Registries\ContainerConsumerRegistry;
+use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
 {
+    /**
+     * {@inheritdoc}
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->container->setParameter('kernel.debug', false);
+    }
+
     /**
      * {@inheritdoc}
      */
@@ -90,7 +109,6 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo.message_handler');
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo.configuration');
 
-
         $definition = $this->container->findDefinition('fivelab.amqp.consumer.foo.configuration');
         $definitionAbstract = $this->container->findDefinition('fivelab.amqp.consumer_single.configuration.abstract');
 
@@ -121,9 +139,8 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
 
         // Verify registry
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer_registry', ContainerConsumerRegistry::class);
-        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall('fivelab.amqp.consumer_registry', 'add', [
-            'foo',
-            'fivelab.amqp.consumer.foo',
+        $this->assertContainerBuilderHasServiceDefinitionWithServiceLocatorArgument('fivelab.amqp.consumer_registry', 0, [
+            'foo' => 'fivelab.amqp.consumer.foo',
         ]);
     }
 

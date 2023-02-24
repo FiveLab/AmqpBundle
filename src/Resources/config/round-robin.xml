@@ -29,6 +29,8 @@
 
         <service id="fivelab.amqp.round_robin_consumer" class="%fivelab.amqp.round_robin_consumer.class%">
             <argument type="service" id="fivelab.amqp.round_robin_consumer.configuration"/>
+            <argument type="service" id="fivelab.amqp.consumer_registry"/>
+            <argument/> <!-- List of consumers -->
         </service>
     </services>
 </container>

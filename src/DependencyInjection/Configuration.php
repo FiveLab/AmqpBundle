@@ -100,10 +100,6 @@ class Configuration implements ConfigurationInterface
                     ->useAttributeAsKey('', false)
                     ->beforeNormalization()
                         ->always(static function (array $delays) {
-                            if (!\is_array($delays)) {
-                                return $delays;
-                            }
-
                             foreach ($delays as $key => $delayInfo) {
                                 if (!\array_key_exists('queue', $delayInfo)) {
                                     $delays[$key]['queue'] = \sprintf('delay.landfill.%s', $key);
@@ -168,7 +164,7 @@ class Configuration implements ConfigurationInterface
         $node
             ->addDefaultsIfNotSet()
             ->children()
-                ->booleanNode('enable')
+                ->booleanNode('enabled')
                     ->defaultValue('%kernel.debug%')
                     ->info('Enable round robin?')
                 ->end()
