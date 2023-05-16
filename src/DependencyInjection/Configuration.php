@@ -620,7 +620,7 @@ class Configuration implements ConfigurationInterface
             ->requiresAtLeastOneElement()
             ->beforeNormalization()
                 ->ifTrue(static function ($value) {
-                    return \is_array($value) &&  \array_key_exists('host', $value);
+                    return \is_array($value) && \array_key_exists('host', $value);
                 })
                 ->then(static function ($value) {
                     return ['default' => $value];
