@@ -19,21 +19,9 @@ Sample configuration
 
 ```yaml
 fivelab_amqp:
-    driver: php_extension           # php_extension|php_lib|php_lib_sockets
-
     connections:
-        default: 
-            host: 127.0.0.1
-            port: 5672
-            vhost: /
-            login: guest
-            password: guest
-            read_timeout: ~         # default: 0, used as read_write_timeout for php_lib
-            heartbeat: ~            # default: 0
-            # php_lib and php_lib_sockets only:
-            keepalive: ~            # default: false
-            write_timeout: ~        # default: 0, php_lib_sockets only
-            channel_rpc_timeout: ~  # default: 0
+        default:
+            dsn: 'amqp://guest:guest@127.0.0.1:15672/%2f?read_timeout=30&other_parameter=some'
 
     exchanges:
         primary:
@@ -94,9 +82,7 @@ use FiveLab\Component\Amqp\Message\Payload;
 
 class MyController 
 {
-    private $publisher;
-
-    public function __construct(PublisherInterface $publisher)
+    public function __construct(private PublisherInterface $publisher)
     {
         $this->publisher = $publisher;
     }
@@ -125,12 +111,15 @@ fivelab_amqp:
             connection: default 
 
     publishers:
-        # Payment publishers
+        # Publishers
         primary_transactional:
             exchange: primary
             channel: transactional
             savepoint: false
 ```
+
+> Note: you should start/commit/rollback transaction directly in you application (on middleware layers on command bus as an example).
+> See `FiveLab\Component\Amqp\Channel\ChannelInterface::(start|commit|rollback)Transaction` methods.
 
 If you want to use savepoint, you can set `true` for `savepoint`. We implement this functionality 
 (`\FiveLab\Component\Amqp\Publisher\SavepointPublisherDecorator`). 
