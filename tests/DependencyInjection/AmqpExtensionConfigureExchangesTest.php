@@ -13,55 +13,33 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use FiveLab\Component\Amqp\Exchange\Definition\Arguments\AlternateExchangeArgument;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\ExpressionLanguage\Expression;
 
-class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureExchangesTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function getMinimalConfiguration(): array
     {
         return [
-            'driver'      => 'php_extension',
             'connections' => [
                 'default' => [
-                    'host' => 'host1',
+                    'dsn' => 'amqp://host1',
                 ],
 
                 'custom' => [
-                    'host' => 'custom',
+                    'dsn' => 'amqp://custom',
                 ],
             ],
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureExchanges(): void
     {
         $this->load([
@@ -116,9 +94,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         // @todo: check connections
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithExpressionLanguage(): void
     {
         $this->load([
@@ -137,9 +113,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         self::assertEquals(new Expression('container.getEnv("BAR")'), $testDefinition->getArgument(3));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureDefaultExchange(): void
     {
         $this->load([
@@ -157,9 +131,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.exchange_definition.default', 1, 'direct');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureExchangesWithArguments(): void
     {
         $this->load([
@@ -240,9 +212,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithBindings(): void
     {
         $this->load([
@@ -294,9 +264,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithUnBindings(): void
     {
         $this->load([
@@ -348,9 +316,7 @@ class AmqpExtensionConfigureExchangesTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldFailConfigureExchangesWithInvalidType(): void
     {
         $this->expectException(InvalidConfigurationException::class);

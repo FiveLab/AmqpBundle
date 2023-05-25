@@ -13,7 +13,6 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterExchangeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterRoutingKeyArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\ExpiresArgument;
@@ -26,52 +25,32 @@ use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueMasterLocatorArgument
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueModeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueTypeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\SingleActiveCustomerArgument;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\ExpressionLanguage\Expression;
 
-class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function getMinimalConfiguration(): array
     {
         return [
-            'driver'      => 'php_extension',
             'connections' => [
                 'default' => [
-                    'host' => 'host1',
+                    'dsn' => 'amqp://host1',
                 ],
 
                 'custom' => [
-                    'host' => 'custom',
+                    'dsn' => 'amqp://custom',
                 ],
             ],
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithMinimalConfiguration(): void
     {
         $this->load([
@@ -110,9 +89,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         ], \array_values($queueDefinition->getArguments()));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithExpressionLanguage(): void
     {
         $this->load([
@@ -129,9 +106,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         self::assertEquals(new Expression('container.getEnv("FOO")'), $queueDefinition->getArgument(4));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithMultipleAndExistParameterForAllQueues(): void
     {
         $this->load([
@@ -155,9 +130,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithCustomConfiguration(): void
     {
         $this->load([
@@ -187,9 +160,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         ], \array_values($queueDefinition->getArguments()));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithBindings(): void
     {
         $this->load([
@@ -240,9 +211,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithUnbindings(): void
     {
         $this->load([
@@ -293,17 +262,20 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     *
-     * @param string $argumentName
-     * @param mixed  $argumentValue
-     * @param string $expectedAggumentClass
-     * @param bool   $checkValue
-     *
-     * @dataProvider provideArguments
-     */
-    public function shouldSuccessConfigureWithArguments(string $argumentName, $argumentValue, string $expectedAggumentClass, bool $checkValue = true): void
+    #[Test]
+    #[TestWith(['dead-letter-exchange', 'norouted', DeadLetterExchangeArgument::class])]
+    #[TestWith(['dead-letter-routing-key', 'some', DeadLetterRoutingKeyArgument::class])]
+    #[TestWith(['expires', 123, ExpiresArgument::class])]
+    #[TestWith(['max-length', 321, MaxLengthArgument::class])]
+    #[TestWith(['max-length-bytes', 111, MaxLengthBytesArgument::class])]
+    #[TestWith(['max-priority', 5, MaxPriorityArgument::class])]
+    #[TestWith(['message-ttl', 10, MessageTtlArgument::class])]
+    #[TestWith(['overflow', 'drop-head', OverflowArgument::class])]
+    #[TestWith(['queue-master-locator', 'min-masters', QueueMasterLocatorArgument::class])]
+    #[TestWith(['queue-mode', 'lazy', QueueModeArgument::class])]
+    #[TestWith(['queue-type', 'classic', QueueTypeArgument::class])]
+    #[TestWith(['single-active-consumer', true, SingleActiveCustomerArgument::class, false])]
+    public function shouldSuccessConfigureWithArguments(string $argumentName, mixed $argumentValue, string $expectedAggumentClass, bool $checkValue = true): void
     {
         $this->load([
             'queues' => [
@@ -335,9 +307,7 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
         }
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithCustomArguments(): void
     {
         $this->load([
@@ -385,88 +355,5 @@ class AmqpExtensionConfigureQueuesTest extends AbstractExtensionTestCase
             1,
             'bar'
         );
-    }
-
-    /**
-     * Provide queue arguments
-     *
-     * @return array
-     */
-    public function provideArguments(): array
-    {
-        return [
-            [
-                'dead-letter-exchange',
-                'norouted',
-                DeadLetterExchangeArgument::class,
-            ],
-
-            [
-                'dead-letter-routing-key',
-                'some',
-                DeadLetterRoutingKeyArgument::class,
-            ],
-
-            [
-                'expires',
-                123,
-                ExpiresArgument::class,
-            ],
-
-            [
-                'max-length',
-                321,
-                MaxLengthArgument::class,
-            ],
-
-            [
-                'max-length-bytes',
-                111,
-                MaxLengthBytesArgument::class,
-            ],
-
-            [
-                'max-priority',
-                5,
-                MaxPriorityArgument::class,
-            ],
-
-            [
-                'message-ttl',
-                10,
-                MessageTtlArgument::class,
-            ],
-
-            [
-                'overflow',
-                'drop-head',
-                OverflowArgument::class,
-            ],
-
-            [
-                'queue-master-locator',
-                'min-masters',
-                QueueMasterLocatorArgument::class,
-            ],
-
-            [
-                'queue-mode',
-                'lazy',
-                QueueModeArgument::class,
-            ],
-
-            [
-                'queue-type',
-                'classic',
-                QueueTypeArgument::class,
-            ],
-
-            [
-                'single-active-consumer',
-                true,
-                SingleActiveCustomerArgument::class,
-                false,
-            ],
-        ];
     }
 }

@@ -13,43 +13,13 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\DependencyInjection\Reference;
 
-class AmqpExtensionTest extends AbstractExtensionTestCase
+class AmqpExtensionTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getMinimalConfiguration(): array
-    {
-        return [
-            'driver' => 'php_extension',
-        ];
-    }
-
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessProcessWithoutConfiguration(): void
     {
         $this->load([]);
@@ -57,44 +27,13 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
         $this->addToAssertionCount(1);
     }
 
-    /**
-     * @test
-     *
-     * @param string $driver
-     *
-     * @dataProvider provideDrivers
-     */
-    public function shouldAllServiceClassExist(string $driver): void
-    {
-        $this->load([
-            'driver' => $driver,
-        ]);
-
-        foreach ($this->container->getDefinitions() as $serviceId => $definition) {
-            $class = $definition->getClass();
-            $class = $this->container->getParameterBag()->resolveValue($class);
-
-            self::assertTrue(
-                \class_exists($class) || \interface_exists($class),
-                \sprintf(
-                    'The class "%s" for service "%s" was not found.',
-                    $class,
-                    $serviceId
-                )
-            );
-        }
-    }
-
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureRoundRobin(): void
     {
         $this->load([
             'connections' => [
                 'default' => [
-                    'host' => 'host',
-                    'port' => 5672,
+                    'dsn' => 'amqp://host',
                 ],
             ],
 
@@ -148,9 +87,7 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
         ], $consumer->getArguments());
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessNoConfigureRoundRobin(): void
     {
         $this->load([
@@ -162,13 +99,12 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderNotHasService('fivelab.amqp.round_robin_consumer');
     }
 
-    /**
-     * @test
-     *
-     * @param string $registry
-     *
-     * @dataProvider providePublicRegistries
-     */
+    #[Test]
+    #[TestWith(['fivelab.amqp.consumer_registry'])]
+    #[TestWith(['fivelab.amqp.exchange_factory_registry'])]
+    #[TestWith(['fivelab.amqp.queue_factory_registry'])]
+    #[TestWith(['fivelab.amqp.connection_factory_registry'])]
+    #[TestWith(['fivelab.amqp.publisher_registry'])]
     public function shouldRegistriesIsPublic(string $registry): void
     {
         $this->load([]);
@@ -179,35 +115,5 @@ class AmqpExtensionTest extends AbstractExtensionTestCase
             'The service "%s" must be public.',
             $registry
         ));
-    }
-
-    /**
-     * Provide data for testing public registries
-     *
-     * @return array
-     */
-    public function providePublicRegistries(): array
-    {
-        return [
-            ['fivelab.amqp.consumer_registry'],
-            ['fivelab.amqp.exchange_factory_registry'],
-            ['fivelab.amqp.queue_factory_registry'],
-            ['fivelab.amqp.connection_factory_registry'],
-            ['fivelab.amqp.publisher_registry'],
-        ];
-    }
-
-    /**
-     * Provide drivers
-     *
-     * @return \string[][]
-     */
-    public function provideDrivers(): array
-    {
-        return [
-            'lib'         => ['php_lib'],
-            'lib_sockets' => ['php_lib_sockets'],
-            'ext'         => ['php_extension'],
-        ];
     }
 }

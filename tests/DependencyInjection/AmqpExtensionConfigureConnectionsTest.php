@@ -13,210 +13,129 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use FiveLab\Bundle\AmqpBundle\Connection\Registry\ConnectionFactoryRegistry;
+use FiveLab\Bundle\AmqpBundle\Factory\DriverFactory;
+use FiveLab\Component\Amqp\Channel\ChannelFactoryInterface;
+use FiveLab\Component\Amqp\Connection\ConnectionFactoryInterface;
+use FiveLab\Component\Amqp\Connection\Dsn;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\DependencyInjection\Reference;
 
-class AmqpExtensionConfigureConnectionsTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureConnectionsTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getMinimalConfiguration(): array
-    {
-        return [
-            'driver' => 'php_extension',
-        ];
-    }
-
-    /**
-     * @test
-     */
-    public function shouldSuccessConfigureWithLibAdapter(): void
+    #[Test]
+    public function shouldSuccessConfigureSingleConnection(): void
     {
         $this->load([
             'connections' => [
-                'connection' => [
-                    'host'     => 'host1',
-                    'port'     => 5672,
-                    'vhost'    => '/',
-                    'login'    => 'foo',
-                    'password' => 'bar',
-                ],
+                'dsn' => 'amqp://localhost',
             ],
         ]);
 
-        $this->addToAssertionCount(1);
+        // Check driver
+        $this->assertService(
+            'fivelab.amqp.connection_dsn.default',
+            Dsn::class,
+            ['amqp://localhost'],
+            [Dsn::class, 'fromDsn']
+        );
+
+        $this->assertService('fivelab.amqp.driver_factory.default', DriverFactory::class, [new Reference('fivelab.amqp.connection_dsn.default')]);
+
+        // Check connection
+        $this->assertService(
+            'fivelab.amqp.connection_factory.default',
+            ConnectionFactoryInterface::class,
+            [],
+            [new Reference('fivelab.amqp.driver_factory.default'), 'createConnectionFactory']
+        );
+
+        // Check default channel
+        $this->assertService('fivelab.amqp.channel_definition.default', '@fivelab.amqp.definition.channel.abstract', []);
+
+        $this->assertService(
+            'fivelab.amqp.channel_factory.default',
+            ChannelFactoryInterface::class,
+            [new Reference('fivelab.amqp.connection_factory.default'), new Reference('fivelab.amqp.channel_definition.default')],
+        );
     }
 
-    /**
-     * @test
-     */
-    public function shouldSuccessConfigureConnections(): void
+    #[Test]
+    public function shouldSuccessConfigureMultipleConnections(): void
     {
         $this->load([
             'connections' => [
                 'connection1' => [
-                    'host'     => 'host1',
-                    'port'     => 5672,
-                    'vhost'    => '/',
-                    'login'    => 'foo',
-                    'password' => 'bar',
+                    'dsn' => 'amqp://localhost:5672',
                 ],
 
                 'connection2' => [
-                    'host'         => 'host2',
-                    'port'         => 5673,
-                    'vhost'        => '/bar',
-                    'login'        => 'user',
-                    'password'     => 'pass',
-                    'read_timeout' => 60,
-                    'heartbeat'    => 30,
+                    'dsn' => 'amqp://localhost:5673',
                 ],
             ],
         ]);
 
         // Verify first connection
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.connection1');
-        $connection1 = $this->container->getDefinition('fivelab.amqp.connection_factory.connection1');
+        $this->assertService(
+            'fivelab.amqp.connection_dsn.connection1',
+            Dsn::class,
+            ['amqp://localhost:5672'],
+            [Dsn::class, 'fromDsn']
+        );
 
-        self::assertEquals(new Reference('fivelab.amqp.connection_factory.connection1_0'), $connection1->getArgument(0));
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.connection1_0');
+        $this->assertService('fivelab.amqp.driver_factory.connection1', DriverFactory::class, [new Reference('fivelab.amqp.connection_dsn.connection1')]);
 
-        $connection10 = $this->container->getDefinition('fivelab.amqp.connection_factory.connection1_0');
+        $this->assertService(
+            'fivelab.amqp.connection_factory.connection1',
+            ConnectionFactoryInterface::class,
+            [],
+            [new Reference('fivelab.amqp.driver_factory.connection1'), 'createConnectionFactory']
+        );
 
-        self::assertEquals([
-            'host'                => 'host1',
-            'port'                => 5672,
-            'vhost'               => '/',
-            'login'               => 'foo',
-            'password'            => 'bar',
-            'read_timeout'        => 0,
-            'heartbeat'           => 0,
-            'insist'              => false,
-            'keepalive'           => false,
-            'write_timeout'       => 0,
-            'channel_rpc_timeout' => 0,
-        ], $connection10->getArgument(0));
+        $this->assertService('fivelab.amqp.channel_definition.connection1', '@fivelab.amqp.definition.channel.abstract', []);
+
+        $this->assertService(
+            'fivelab.amqp.channel_factory.connection1',
+            ChannelFactoryInterface::class,
+            [new Reference('fivelab.amqp.connection_factory.connection1'), new Reference('fivelab.amqp.channel_definition.connection1')],
+        );
 
         // Verify second connection
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.connection2');
-        $connection2 = $this->container->getDefinition('fivelab.amqp.connection_factory.connection2');
+        $this->assertService(
+            'fivelab.amqp.connection_dsn.connection2',
+            Dsn::class,
+            ['amqp://localhost:5673'],
+            [Dsn::class, 'fromDsn']
+        );
 
-        self::assertEquals(new Reference('fivelab.amqp.connection_factory.connection2_0'), $connection2->getArgument(0));
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.connection2_0');
+        $this->assertService('fivelab.amqp.driver_factory.connection2', DriverFactory::class, [new Reference('fivelab.amqp.connection_dsn.connection2')]);
 
-        $connection20 = $this->container->getDefinition('fivelab.amqp.connection_factory.connection2_0');
+        $this->assertService(
+            'fivelab.amqp.connection_factory.connection2',
+            ConnectionFactoryInterface::class,
+            [],
+            [new Reference('fivelab.amqp.driver_factory.connection2'), 'createConnectionFactory']
+        );
 
-        self::assertEquals([
-            'host'                => 'host2',
-            'port'                => 5673,
-            'vhost'               => '/bar',
-            'login'               => 'user',
-            'password'            => 'pass',
-            'read_timeout'        => 60,
-            'heartbeat'           => 30,
-            'insist'              => false,
-            'keepalive'           => false,
-            'write_timeout'       => 0,
-            'channel_rpc_timeout' => 0,
-        ], $connection20->getArgument(0));
+        $this->assertService('fivelab.amqp.channel_definition.connection2', '@fivelab.amqp.definition.channel.abstract', []);
 
-        $this->assertContainerBuilderHasParameter('fivelab.amqp.connection_factories', [
+        $this->assertService(
+            'fivelab.amqp.channel_factory.connection2',
+            ChannelFactoryInterface::class,
+            [new Reference('fivelab.amqp.connection_factory.connection2'), new Reference('fivelab.amqp.channel_definition.connection2')],
+        );
+
+        // Additional checks
+        $this->assertParameter('fivelab.amqp.connection_factories', [
             'connection1',
             'connection2',
         ]);
 
-        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
-            'fivelab.amqp.connection_factory_registry',
-            'add',
-            ['connection1', new Reference('fivelab.amqp.connection_factory.connection1')],
-            0
-        );
-
-        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall(
-            'fivelab.amqp.connection_factory_registry',
-            'add',
-            ['connection2', new Reference('fivelab.amqp.connection_factory.connection2')],
-            1
-        );
-    }
-
-    /**
-     * @test
-     */
-    public function shouldSuccessConfigureConnectionsWithMultipleHosts(): void
-    {
-        $this->load([
-            'connections' => [
-                'default' => [
-                    'host'      => ['host1', 'host2'],
-                    'port'      => 5672,
-                    'vhost'     => '/',
-                    'login'     => 'foo',
-                    'password'  => 'bar',
-                    'heartbeat' => 60,
-                ],
+        $this->assertService('fivelab.amqp.connection_factory_registry', ConnectionFactoryRegistry::class, calls: [
+            'add' => [
+                ['connection1', new Reference('fivelab.amqp.connection_factory.connection1')],
+                ['connection2', new Reference('fivelab.amqp.connection_factory.connection2')],
             ],
         ]);
-
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.default');
-        $originConnection = $this->container->getDefinition('fivelab.amqp.connection_factory.default');
-
-        self::assertEquals(new Reference('fivelab.amqp.connection_factory.default_0'), $originConnection->getArgument(0));
-        self::assertEquals(new Reference('fivelab.amqp.connection_factory.default_1'), $originConnection->getArgument(1));
-
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.default_0');
-        $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.default_1');
-
-        $connection1 = $this->container->getDefinition('fivelab.amqp.connection_factory.default_0');
-
-        self::assertEquals([
-            'host'                => 'host1',
-            'port'                => 5672,
-            'vhost'               => '/',
-            'login'               => 'foo',
-            'password'            => 'bar',
-            'read_timeout'        => 0,
-            'heartbeat'           => 60,
-            'insist'              => false,
-            'keepalive'           => false,
-            'write_timeout'       => 0,
-            'channel_rpc_timeout' => 0,
-        ], $connection1->getArgument(0));
-
-        $connection2 = $this->container->getDefinition('fivelab.amqp.connection_factory.default_1');
-
-        self::assertEquals([
-            'host'                => 'host2',
-            'port'                => 5672,
-            'vhost'               => '/',
-            'login'               => 'foo',
-            'password'            => 'bar',
-            'read_timeout'        => 0,
-            'heartbeat'           => 60,
-            'insist'              => false,
-            'keepalive'           => false,
-            'write_timeout'       => 0,
-            'channel_rpc_timeout' => 0,
-        ], $connection2->getArgument(0));
     }
 }

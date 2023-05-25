@@ -13,45 +13,32 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
 
-class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureFromMultipleConfigsTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessBuildConnections(): void
     {
         $this->doLoad([
             [
                 'connections' => [
                     'default' => [
-                        'host' => '127.0.0.1',
+                        'dsn' => 'amqp://127.0.0.1',
                     ],
                 ],
             ],
             [
                 'connections' => [
                     'additional' => [
-                        'host' => '127.0.0.2',
+                        'dsn' => 'amqp://127.0.0.2',
                     ],
                 ],
             ],
             [
                 'connections' => [
                     'some' => [
-                        'host' => '127.0.0.3',
+                        'dsn' => 'amqp://127.0.0.3',
                     ],
                 ],
             ],
@@ -62,15 +49,13 @@ class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTes
         $this->assertContainerBuilderHasService('fivelab.amqp.connection_factory.some');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessBuildChannels(): void
     {
         $this->doLoad([
             [
                 'connections' => [
-                    'default' => ['host' => '127.0.0.1'],
+                    'default' => ['dsn' => 'amqp://127.0.0.1'],
                 ],
 
                 'channels' => [
@@ -100,15 +85,13 @@ class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTes
         $this->assertContainerBuilderHasService('fivelab.amqp.channel_definition.default.third');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessBuildExchanges(): void
     {
         $this->doLoad([
             [
                 'connections' => [
-                    'default' => ['host' => '127.0.0.1'],
+                    'default' => ['dsn' => 'amqp://127.0.0.1'],
                 ],
 
                 'exchanges' => [
@@ -138,15 +121,13 @@ class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTes
         $this->assertContainerBuilderHasService('fivelab.amqp.exchange_definition.third');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessBuildQueues(): void
     {
         $this->doLoad([
             [
                 'connections' => [
-                    'default' => ['host' => '127.0.0.1'],
+                    'default' => ['dsn' => 'amqp://127.0.0.1'],
                 ],
 
                 'queues' => [
@@ -176,15 +157,13 @@ class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTes
         $this->assertContainerBuilderHasService('fivelab.amqp.queue_definition.third');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessBuildConsumers(): void
     {
         $this->doLoad([
             [
                 'connections' => [
-                    'default' => ['host' => '127.0.0.1'],
+                    'default' => ['dsn' => 'amqp://127.0.0.1'],
                 ],
 
                 'queues' => [
@@ -223,15 +202,13 @@ class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTes
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.third');
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessBuildPublishers(): void
     {
         $this->doLoad([
             [
                 'connections' => [
-                    'default' => ['host' => '127.0.0.1'],
+                    'default' => ['dsn' => 'amqp://127.0.0.1'],
                 ],
 
                 'exchanges' => [
@@ -274,20 +251,8 @@ class AmqpExtensionConfigureFromMultipleConfigsTest extends AbstractExtensionTes
      */
     protected function doLoad(array $configs): void
     {
-        \array_unshift($configs, [
-            'driver' => 'php_extension',
-        ]);
-
         foreach ($this->getContainerExtensions() as $extension) {
             $extension->load($configs, $this->container);
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
     }
 }

@@ -17,7 +17,6 @@ use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
-use Symfony\Component\HttpKernel\Kernel;
 
 /**
  * The configuration definition for AMQP library.
@@ -29,26 +28,11 @@ class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        if (-1 === \version_compare(Kernel::VERSION, '4.2.0')) {
-            $treeBuilder = new TreeBuilder();
-            $rootNode = $treeBuilder->root('fivelab_amqp');
-        } else {
-            $treeBuilder = new TreeBuilder('fivelab_amqp');
-            $rootNode = $treeBuilder->getRootNode();
-        }
+        $treeBuilder = new TreeBuilder('fivelab_amqp');
+        $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
             ->children()
-                ->scalarNode('driver')
-                    ->isRequired()
-                    ->info('The driver for connect to RabbitMQ.')
-                    ->example('php_extension')
-                    ->validate()
-                        ->ifNotInArray(['php_extension', 'php_lib', 'php_lib_sockets'])
-                        ->thenInvalid('Invalid driver "%s". Available drivers: "php_extension", "php_lib", "php_lib_sockets".')
-                    ->end()
-                ->end()
-
                 ->append($this->getDelayDefinition())
                 ->append($this->getRoundRobinDefinition())
                 ->append($this->getConnectionsNodeDefinition())
@@ -617,10 +601,12 @@ class Configuration implements ConfigurationInterface
 
         $node
             ->useAttributeAsKey('', false)
-            ->requiresAtLeastOneElement()
+            ->requiresAtLeastOneElement();
+
+        $node
             ->beforeNormalization()
                 ->ifTrue(static function ($value) {
-                    return \is_array($value) && \array_key_exists('host', $value);
+                    return \is_array($value) && \array_key_exists('dsn', $value);
                 })
                 ->then(static function ($value) {
                     return ['default' => $value];
@@ -632,70 +618,10 @@ class Configuration implements ConfigurationInterface
 
         $prototypeNode
             ->children()
-                ->arrayNode('host')
+                ->scalarNode('dsn')
                     ->isRequired()
-                    ->beforeNormalization()
-                        ->ifTrue(static function ($value) {
-                            return !\is_array($value);
-                        })
-                        ->then(static function ($value) {
-                            return [$value];
-                        })
-                    ->end()
-                    ->info('The hosts for connect to RabbitMQ.')
-                    ->example('rabbitmq.my-domain.com or [\'rabbitmq-01.my-domoain.com\', \'rabbitmq-02.my-domain.com\']')
-                    ->prototype('scalar')
-                    ->end()
-                ->end()
-
-                ->scalarNode('port')
-                    ->defaultValue(5672)
-                    ->info('The port for connect to RabbitMQ.')
-                ->end()
-
-                ->scalarNode('vhost')
-                    ->defaultValue('/')
-                    ->info('The virtual host for connect to RabbitMQ.')
-                ->end()
-
-                ->scalarNode('login')
-                    ->defaultValue('guest')
-                    ->info('The login for connect to RabbitMQ.')
-                ->end()
-
-                ->scalarNode('password')
-                    ->defaultValue('guest')
-                    ->info('The password for connect to RabbitMQ.')
-                ->end()
-
-                ->scalarNode('read_timeout')
-                    ->defaultValue(0)
-                    ->info('The read timeout of RabbitMQ.')
-                ->end()
-
-                ->scalarNode('heartbeat')
-                    ->defaultValue(0)
-                    ->info('Add hearthbeat functionality.')
-                ->end()
-
-                ->booleanNode('insist')
-                    ->defaultValue(false)
-                    ->info('php-amqplib option "insist"')
-                ->end()
-
-                ->booleanNode('keepalive')
-                    ->defaultValue(false)
-                    ->info('php-amqplib option for TCP-keepalive')
-                ->end()
-
-                ->scalarNode('write_timeout')
-                    ->defaultValue(0)
-                    ->info('php-amqplib (sockets only) option "write_timeout"')
-                ->end()
-
-                ->scalarNode('channel_rpc_timeout')
-                    ->defaultValue(0)
-                    ->info('php-amqplib option "channel_rpc_timeout"')
+                    ->info('The DSN for connect to RabbitMQ.')
+                    ->example('amqp://guest:guest@host1.com,host2.com:5672/%2f?read_timeout=60&heartbeat=30')
                 ->end()
             ->end();
 

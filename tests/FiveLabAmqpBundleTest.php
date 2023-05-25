@@ -18,14 +18,13 @@ use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use FiveLab\Bundle\AmqpBundle\FiveLabAmqpBundle;
 use FiveLab\Component\Amqp\Connection\ConnectionFactoryInterface;
 use FiveLab\Component\Amqp\Connection\ConnectionInterface;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 class FiveLabAmqpBundleTest extends TestCase
 {
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessGetExtension(): void
     {
         $bundle = new FiveLabAmqpBundle();
@@ -35,14 +34,12 @@ class FiveLabAmqpBundleTest extends TestCase
         self::assertInstanceOf(AmqpExtension::class, $extension);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessShutdown(): void
     {
-        list ($factory1, $connection1) = $this->createConnectionWithFactory();
-        list ($factory2, $connection2) = $this->createConnectionWithFactory();
-        list ($factory3, $connection3) = $this->createConnectionWithFactory();
+        [$factory1, $connection1] = $this->createConnectionWithFactory();
+        [$factory2, $connection2] = $this->createConnectionWithFactory();
+        [$factory3, $connection3] = $this->createConnectionWithFactory();
 
         $connection1->expects(self::once())
             ->method('isConnected')

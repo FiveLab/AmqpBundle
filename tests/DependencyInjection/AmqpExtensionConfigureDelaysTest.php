@@ -13,44 +13,20 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\DependencyInjection\Reference;
 
-class AmqpExtensionConfigureDelaysTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function getMinimalConfiguration(): array
     {
         return [
-            'driver'      => 'php_extension',
             'connections' => [
                 'connection' => [
-                    'host'     => 'localhost',
-                    'port'     => 5672,
-                    'vhost'    => '/',
-                    'login'    => 'guest',
-                    'password' => 'guest',
+                    'dsn'     => 'amqp://localhost',
                 ],
             ],
 
@@ -62,9 +38,7 @@ class AmqpExtensionConfigureDelaysTest extends AbstractExtensionTestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureDelay(): void
     {
         $this->load([

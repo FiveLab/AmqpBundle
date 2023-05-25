@@ -13,44 +13,24 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\DependencyInjection\Reference;
 
-class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigurePublishersTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function getMinimalConfiguration(): array
     {
         return [
-            'driver'      => 'php_extension',
             'connections' => [
                 'default' => [
-                    'host' => 'host1',
+                    'dsn' => 'amqp://host1',
                 ],
 
                 'custom' => [
-                    'host' => 'custom',
+                    'dsn' => 'amqp://custom',
                 ],
             ],
 
@@ -63,9 +43,7 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithMinimalConfiguration(): void
     {
         $this->load([
@@ -100,9 +78,7 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasParameter('fivelab.amqp.savepoint_publishers', []);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithSavepoint(): void
     {
         $this->load([
@@ -148,9 +124,7 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasParameter('fivelab.amqp.savepoint_publishers', ['some']);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithMiddlewares(): void
     {
         $this->load([
@@ -184,9 +158,7 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         ], \array_values($middlewaresDefinition->getArguments()));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithOtherChannel(): void
     {
         $this->load([
@@ -222,9 +194,7 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionIfTryToUseUndefinedChannel(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -240,9 +210,7 @@ class AmqpExtensionConfigurePublishersTest extends AbstractExtensionTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionIfChannelHasDifferentConnection(): void
     {
         $this->expectException(\RuntimeException::class);

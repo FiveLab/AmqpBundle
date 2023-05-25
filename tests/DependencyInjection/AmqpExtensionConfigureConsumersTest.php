@@ -13,45 +13,25 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\DependencyInjection\Reference;
 
-class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function getMinimalConfiguration(): array
     {
         return [
-            'driver'      => 'php_extension',
             'connections' => [
                 'default' => [
-                    'host' => 'host1',
+                    'dsn' => 'amqp://host1',
                 ],
 
                 'custom' => [
-                    'host' => 'custom',
+                    'dsn' => 'amqp://custom',
                 ],
             ],
 
@@ -77,16 +57,13 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSingleConsumer(): void
     {
         $this->load([
             'connections' => [
                 'default' => [
-                    'host' => 'localhost',
-                    'port' => 5672,
+                    'dsn' => 'amqp://localhost',
                 ],
             ],
 
@@ -94,7 +71,6 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
                 'foo' => [
                     'queue'            => 'default',
                     'message_handlers' => ['handler1', 'handler2'],
-
                 ],
             ],
 
@@ -144,9 +120,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSingleConsumerWithNotRequeueOnError(): void
     {
         $this->load([
@@ -165,9 +139,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 0, false);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSingleConsumerWithPrefetchCount(): void
     {
         $this->load([
@@ -186,9 +158,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.configuration', 1, 10);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSingleConsumerWithCustomMiddlewares(): void
     {
         $this->load([
@@ -211,9 +181,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.middlewares', 2, new Reference('middleware3'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSpoolConsumer(): void
     {
         $this->load([
@@ -257,9 +225,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 4, null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSpoolConsumerWithCustomConfiguration(): void
     {
         $this->load([
@@ -285,9 +251,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 4, null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureLoopConsumer(): void
     {
         $this->load([
@@ -328,9 +292,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 3, null);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureLoopConsumerWithPrefetchCount(): void
     {
         $this->load([
@@ -349,9 +311,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, 20);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureLoopConsumerWithCustomConfiguration(): void
     {
         $this->load([
@@ -372,9 +332,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 1, false);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureWithCustomChannel(): void
     {
         $this->load([
@@ -411,9 +369,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSingleConsumerWithTagNameGenerator(): void
     {
         $this->load([
@@ -430,9 +386,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 2, new Reference('some.foo'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureLoopConsumerWithTagNameGenerator(): void
     {
         $this->load([
@@ -449,9 +403,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 3, new Reference('some.foo'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureSpoolConsumerWithTagNameGenerator(): void
     {
         $this->load([
@@ -468,9 +420,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.bar.configuration', 4, new Reference('some.foo'));
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessAddConsumersToListCommand(): void
     {
         $this->load([
@@ -495,9 +445,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionIfChannelWasNotFound(): void
     {
         $this->expectException(\RuntimeException::class);
@@ -514,9 +462,7 @@ class AmqpExtensionConfigureConsumersTest extends AbstractExtensionTestCase
         ]);
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionIfChannelHasDifferentConnection(): void
     {
         $this->expectException(\RuntimeException::class);

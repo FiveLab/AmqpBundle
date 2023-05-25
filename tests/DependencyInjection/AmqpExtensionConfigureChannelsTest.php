@@ -13,60 +13,31 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
-use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
-use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use FiveLab\Component\Amqp\Channel\ChannelFactoryInterface;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\DependencyInjection\Reference;
 
-class AmqpExtensionConfigureChannelsTest extends AbstractExtensionTestCase
+class AmqpExtensionConfigureChannelsTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->container->setParameter('kernel.debug', false);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getContainerExtensions(): array
-    {
-        return [new AmqpExtension()];
-    }
-
     /**
      * {@inheritdoc}
      */
     protected function getMinimalConfiguration(): array
     {
         return [
-            'driver'      => 'php_extension',
             'connections' => [
                 'connection1' => [
-                    'host'     => 'localhost',
-                    'port'     => 5672,
-                    'vhost'    => '/',
-                    'login'    => 'guest',
-                    'password' => 'guest',
+                    'dsn' => 'amqp://localhost',
                 ],
 
                 'connection2' => [
-                    'host'     => 'localhost',
-                    'port'     => 5672,
-                    'vhost'    => '/',
-                    'login'    => 'guest',
-                    'password' => 'guest',
+                    'dsn' => 'amqp://localhost',
                 ],
             ],
         ];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldSuccessConfigureChannels(): void
     {
         $this->load([
@@ -86,57 +57,37 @@ class AmqpExtensionConfigureChannelsTest extends AbstractExtensionTestCase
         ]);
 
         // Verify first channel
-        $this->assertContainerBuilderHasService('fivelab.amqp.channel_definition.connection1.channel1');
-        $this->assertContainerBuilderHasService('fivelab.amqp.channel_factory.connection1.channel1');
+        $this->assertService('fivelab.amqp.channel_definition.connection1.channel1', '@fivelab.amqp.definition.channel.abstract');
 
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+        $this->assertService(
             'fivelab.amqp.channel_factory.connection1.channel1',
-            0,
-            new Reference('fivelab.amqp.connection_factory.connection1')
-        );
-
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
-            'fivelab.amqp.channel_factory.connection1.channel1',
-            1,
-            new Reference('fivelab.amqp.channel_definition.connection1.channel1')
+            ChannelFactoryInterface::class,
+            [new Reference('fivelab.amqp.connection_factory.connection1'), new Reference('fivelab.amqp.channel_definition.connection1.channel1')],
+            [new Reference('fivelab.amqp.driver_factory.connection1'), 'createChannelFactory']
         );
 
         // Verify second channel
-        $this->assertContainerBuilderHasService('fivelab.amqp.channel_definition.connection2.channel2');
-        $this->assertContainerBuilderHasService('fivelab.amqp.channel_factory.connection2.channel2');
+        $this->assertService('fivelab.amqp.channel_definition.connection2.channel2', '@fivelab.amqp.definition.channel.abstract');
 
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+        $this->assertService(
             'fivelab.amqp.channel_factory.connection2.channel2',
-            0,
-            new Reference('fivelab.amqp.connection_factory.connection2')
-        );
-
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
-            'fivelab.amqp.channel_factory.connection2.channel2',
-            1,
-            new Reference('fivelab.amqp.channel_definition.connection2.channel2')
+            ChannelFactoryInterface::class,
+            [new Reference('fivelab.amqp.connection_factory.connection2'), new Reference('fivelab.amqp.channel_definition.connection2.channel2')],
+            [new Reference('fivelab.amqp.driver_factory.connection2'), 'createChannelFactory']
         );
 
         // Verify third channel
-        $this->assertContainerBuilderHasService('fivelab.amqp.channel_definition.connection2.channel3');
-        $this->assertContainerBuilderHasService('fivelab.amqp.channel_factory.connection2.channel3');
+        $this->assertService('fivelab.amqp.channel_definition.connection2.channel3', '@fivelab.amqp.definition.channel.abstract');
 
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+        $this->assertService(
             'fivelab.amqp.channel_factory.connection2.channel3',
-            0,
-            new Reference('fivelab.amqp.connection_factory.connection2')
-        );
-
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
-            'fivelab.amqp.channel_factory.connection2.channel3',
-            1,
-            new Reference('fivelab.amqp.channel_definition.connection2.channel3')
+            ChannelFactoryInterface::class,
+            [new Reference('fivelab.amqp.connection_factory.connection2'), new Reference('fivelab.amqp.channel_definition.connection2.channel3')],
+            [new Reference('fivelab.amqp.driver_factory.connection2'), 'createChannelFactory']
         );
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function shouldThrowExceptionIfConnectionWasNotFound(): void
     {
         $this->expectException(\RuntimeException::class);

@@ -13,7 +13,12 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\DependencyInjection;
 
+use FiveLab\Bundle\AmqpBundle\Factory\DriverFactory;
+use FiveLab\Component\Amqp\Channel\ChannelFactoryInterface;
+use FiveLab\Component\Amqp\Connection\ConnectionFactoryInterface;
+use FiveLab\Component\Amqp\Connection\Dsn;
 use FiveLab\Component\Amqp\Exchange\Definition\Arguments\AlternateExchangeArgument;
+use FiveLab\Component\Amqp\Exchange\ExchangeFactoryInterface;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterExchangeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterRoutingKeyArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\ExpiresArgument;
@@ -26,6 +31,7 @@ use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueMasterLocatorArgument
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueModeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueTypeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\SingleActiveCustomerArgument;
+use FiveLab\Component\Amqp\Queue\QueueFactoryInterface;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
@@ -41,6 +47,11 @@ use Symfony\Component\HttpKernel\DependencyInjection\Extension;
  */
 class AmqpExtension extends Extension
 {
+    /**
+     * @var array<string>
+     */
+    private array $driverFactories = [];
+
     /**
      * The list of available connections.
      *
@@ -67,7 +78,7 @@ class AmqpExtension extends Extension
      *
      * @var array
      */
-    private array $channelConnections;
+    private array $channelConnections = [];
 
     /**
      * The list of available exchange factories
@@ -129,28 +140,10 @@ class AmqpExtension extends Extension
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
-        $loader->load('factories.php');
         $loader->load('definitions.php');
         $loader->load('consumers.php');
         $loader->load('publishers.php');
         $loader->load('services.php');
-
-        switch ($config['driver']) {
-            case 'php_extension':
-                $loader->load('driver/php-extension.php');
-                break;
-
-            case 'php_lib':
-                $loader->load('driver/php-lib.php');
-                break;
-
-            case 'php_lib_sockets':
-                $loader->load('driver/php-lib-sockets.php');
-                break;
-
-            default:
-                throw new \InvalidArgumentException(\sprintf('Invalid driver "%s".', $config['driver']));
-        }
 
         $this->configureConnections($container, $config['connections']);
         $this->configureChannels($container, $config['channels']);
@@ -197,64 +190,53 @@ class AmqpExtension extends Extension
      */
     private function configureConnections(ContainerBuilder $container, array $connections): void
     {
-        $registryDefinition = $container->getDefinition('fivelab.amqp.connection_factory_registry');
+        $registryDef = $container->getDefinition('fivelab.amqp.connection_factory_registry');
 
         foreach ($connections as $key => $connection) {
-            // Create spool connection service definition
-            $originConnectionFactoryServiceId = \sprintf('fivelab.amqp.connection_factory.%s', $key);
-            $originConnectionFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.spool_connection_factory.abstract');
+            // Create DSN for connection.
+            $dsnServiceId = \sprintf('fivelab.amqp.connection_dsn.%s', $key);
+            $dsnServiceDef = new Definition(Dsn::class, [$connection['dsn']]);
+            $dsnServiceDef->setFactory([Dsn::class, 'fromDsn']);
 
-            $spoolConnections = [];
+            $container->setDefinition($dsnServiceId, $dsnServiceDef);
 
-            // Create connection service definition
-            foreach ($connection['host'] as $connectionIndex => $host) {
-                $connectionFactoryServiceId = \sprintf('fivelab.amqp.connection_factory.%s_%s', $key, $connectionIndex);
-                $connectionFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.connection_factory.abstract');
+            // Create driver factory
+            $driverFactoryServiceId = \sprintf('fivelab.amqp.driver_factory.%s', $key);
+            $driverFactoryServiceDef = new Definition(DriverFactory::class, [new Reference($dsnServiceId)]);
 
-                $connectionFactoryServiceDefinition->replaceArgument(0, [
-                    'host'                => $host,
-                    'port'                => $connection['port'],
-                    'vhost'               => $connection['vhost'],
-                    'login'               => $connection['login'],
-                    'password'            => $connection['password'],
-                    'read_timeout'        => $connection['read_timeout'],
-                    'heartbeat'           => $connection['heartbeat'],
-                    'insist'              => $connection['insist'],
-                    'keepalive'           => $connection['keepalive'],
-                    'write_timeout'       => $connection['write_timeout'],
-                    'channel_rpc_timeout' => $connection['channel_rpc_timeout'],
-                ]);
+            $container->setDefinition($driverFactoryServiceId, $driverFactoryServiceDef);
 
-                $container->setDefinition($connectionFactoryServiceId, $connectionFactoryServiceDefinition);
+            $this->driverFactories[$key] = $driverFactoryServiceId;
 
-                $spoolConnections[] = new Reference($connectionFactoryServiceId);
-            }
+            // Create connection
+            $connectionFactoryServiceId = \sprintf('fivelab.amqp.connection_factory.%s', $key);
+            $connectionFactoryServiceDef = new Definition(ConnectionFactoryInterface::class);
+            $connectionFactoryServiceDef->setFactory([new Reference($driverFactoryServiceId), 'createConnectionFactory']);
 
-            $originConnectionFactoryServiceDefinition->setArguments($spoolConnections);
-            $container->setDefinition($originConnectionFactoryServiceId, $originConnectionFactoryServiceDefinition);
+            $container->setDefinition($connectionFactoryServiceId, $connectionFactoryServiceDef);
 
-            $this->connectionFactories[$key] = $originConnectionFactoryServiceId;
+            $this->connectionFactories[$key] = $connectionFactoryServiceId;
 
-            $registryDefinition->addMethodCall('add', [
+            $registryDef->addMethodCall('add', [
                 $key,
-                new Reference($originConnectionFactoryServiceId),
+                new Reference($connectionFactoryServiceId),
             ]);
 
             // Create default channel definition service definition
             $channelDefinitionServiceId = \sprintf('fivelab.amqp.channel_definition.%s', $key);
-            $channelDefinitionServiceDefinition = new ChildDefinition('fivelab.amqp.definition.channel.abstract');
+            $channelDefinitionServiceDef = new ChildDefinition('fivelab.amqp.definition.channel.abstract');
 
-            $container->setDefinition($channelDefinitionServiceId, $channelDefinitionServiceDefinition);
+            $container->setDefinition($channelDefinitionServiceId, $channelDefinitionServiceDef);
 
             // Create default channel factory service definition
             $channelFactoryServiceId = \sprintf('fivelab.amqp.channel_factory.%s', $key);
-            $channelFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.channel_factory.abstract');
+            $channelFactoryServiceDef = new Definition(ChannelFactoryInterface::class);
 
-            $channelFactoryServiceDefinition
-                ->replaceArgument(0, new Reference($originConnectionFactoryServiceId))
-                ->replaceArgument(1, new Reference($channelDefinitionServiceId));
+            $channelFactoryServiceDef
+                ->setFactory([new Reference($driverFactoryServiceId), 'createChannelFactory'])
+                ->setArguments([new Reference($connectionFactoryServiceId), new Reference($channelDefinitionServiceId)]);
 
-            $container->setDefinition($channelFactoryServiceId, $channelFactoryServiceDefinition);
+            $container->setDefinition($channelFactoryServiceId, $channelFactoryServiceDef);
 
             $this->defaultChannelFactories[$key] = $channelFactoryServiceId;
         }
@@ -273,7 +255,7 @@ class AmqpExtension extends Extension
         foreach ($channels as $key => $channel) {
             $connectionKey = $channel['connection'];
 
-            if (!\array_key_exists($connectionKey, $this->connectionFactories)) {
+            if (!\array_key_exists($connectionKey, $this->driverFactories)) {
                 throw new \RuntimeException(\sprintf(
                     'Can\'t configure channel "%s". Connection "%s" was not found.',
                     $key,
@@ -281,22 +263,22 @@ class AmqpExtension extends Extension
                 ));
             }
 
+            $driverFactoryServiceId = $this->driverFactories[$connectionKey];
+
             $connectionFactoryServiceId = $this->connectionFactories[$connectionKey];
 
             // Create channel definition
             $channelDefinitionServiceId = \sprintf('fivelab.amqp.channel_definition.%s.%s', $connectionKey, $key);
-            $channelDefinitionServiceDefinition = new ChildDefinition('fivelab.amqp.definition.channel.abstract');
+            $channelDefinitionServiceDef = new ChildDefinition('fivelab.amqp.definition.channel.abstract');
 
-            $container->setDefinition($channelDefinitionServiceId, $channelDefinitionServiceDefinition);
+            $container->setDefinition($channelDefinitionServiceId, $channelDefinitionServiceDef);
 
             $channelFactoryServiceId = \sprintf('fivelab.amqp.channel_factory.%s.%s', $connectionKey, $key);
-            $channelFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.channel_factory.abstract');
+            $channelFactoryServiceDef = new Definition(ChannelFactoryInterface::class);
+            $channelFactoryServiceDef->setFactory([new Reference($driverFactoryServiceId), 'createChannelFactory']);
+            $channelFactoryServiceDef->setArguments([new Reference($connectionFactoryServiceId), new Reference($channelDefinitionServiceId)]);
 
-            $channelFactoryServiceDefinition
-                ->replaceArgument(0, new Reference($connectionFactoryServiceId))
-                ->replaceArgument(1, new Reference($channelDefinitionServiceId));
-
-            $container->setDefinition($channelFactoryServiceId, $channelFactoryServiceDefinition);
+            $container->setDefinition($channelFactoryServiceId, $channelFactoryServiceDef);
 
             $this->channelFactories[$key] = $channelFactoryServiceId;
             $this->channelConnections[$key] = $connectionKey;
@@ -311,10 +293,10 @@ class AmqpExtension extends Extension
      */
     private function configureExchanges(ContainerBuilder $container, array $exchanges): void
     {
-        $registryDefinition = $container->getDefinition('fivelab.amqp.exchange_factory_registry');
+        $registryDef = $container->getDefinition('fivelab.amqp.exchange_factory_registry');
 
         foreach ($exchanges as $key => $exchange) {
-            if (!\array_key_exists($exchange['connection'], $this->connectionFactories)) {
+            if (!\array_key_exists($exchange['connection'], $this->driverFactories)) {
                 throw new \RuntimeException(\sprintf(
                     'Cannot configure exchange with key "%s". The connection "%s" was not found.',
                     $key,
@@ -325,7 +307,7 @@ class AmqpExtension extends Extension
             // Configure bindings
             $bindingReferences = [];
             $bindingsServiceId = \sprintf('fivelab.amqp.exchange_definition.%s.bindings', $key);
-            $bindingsServiceDefinition = new ChildDefinition('fivelab.amqp.definition.bindings');
+            $bindingsServiceDef = new ChildDefinition('fivelab.amqp.definition.bindings');
 
             foreach ($exchange['bindings'] as $binding) {
                 $bindingServiceId = \sprintf(
@@ -335,22 +317,22 @@ class AmqpExtension extends Extension
                     $binding['routing']
                 );
 
-                $bindingServiceDefinition = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
-                $bindingServiceDefinition
+                $bindingServiceDef = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
+                $bindingServiceDef
                     ->replaceArgument(0, $binding['exchange'])
                     ->replaceArgument(1, $binding['routing']);
 
-                $container->setDefinition($bindingServiceId, $bindingServiceDefinition);
+                $container->setDefinition($bindingServiceId, $bindingServiceDef);
 
                 $bindingReferences[] = new Reference($bindingServiceId);
             }
 
-            $bindingsServiceDefinition->setArguments($bindingReferences);
-            $container->setDefinition($bindingsServiceId, $bindingsServiceDefinition);
+            $bindingsServiceDef->setArguments($bindingReferences);
+            $container->setDefinition($bindingsServiceId, $bindingsServiceDef);
 
             $unbingingReferences = [];
             $unbindingsServiceId = \sprintf('fivelab.amqp.exchange_definition.%s.unbindings', $key);
-            $unbindingsServiceDefinition = new ChildDefinition('fivelab.amqp.definition.bindings');
+            $unbindingsServiceDef = new ChildDefinition('fivelab.amqp.definition.bindings');
 
             foreach ($exchange['unbindings'] as $unbinding) {
                 $unbindingServiceId = \sprintf(
@@ -360,18 +342,18 @@ class AmqpExtension extends Extension
                     $unbinding['routing']
                 );
 
-                $unbindingServiceDefinition = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
-                $unbindingServiceDefinition
+                $unbindingServiceDef = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
+                $unbindingServiceDef
                     ->replaceArgument(0, $unbinding['exchange'])
                     ->replaceArgument(1, $unbinding['routing']);
 
-                $container->setDefinition($unbindingServiceId, $unbindingServiceDefinition);
+                $container->setDefinition($unbindingServiceId, $unbindingServiceDef);
 
                 $unbingingReferences[] = new Reference($unbindingServiceId);
             }
 
-            $unbindingsServiceDefinition->setArguments($unbingingReferences);
-            $container->setDefinition($unbindingsServiceId, $unbindingsServiceDefinition);
+            $unbindingsServiceDef->setArguments($unbingingReferences);
+            $container->setDefinition($unbindingsServiceId, $unbindingsServiceDef);
 
             // Create exchange arguments
             $argumentsServiceId = null;
@@ -380,7 +362,7 @@ class AmqpExtension extends Extension
                 $exchangeArguments = $exchange['arguments'];
 
                 $argumentsServiceId = \sprintf('fivelab.amqp.exchange_definition.%s.arguments', $key);
-                $argumentsServiceDefinition = new ChildDefinition('fivelab.amqp.definition.arguments.abstract');
+                $argumentsServiceDef = new ChildDefinition('fivelab.amqp.definition.arguments.abstract');
                 $argumentReferences = [[]];
 
                 if (\array_key_exists('alternate-exchange', $exchangeArguments) && $exchangeArguments['alternate-exchange']) {
@@ -402,16 +384,16 @@ class AmqpExtension extends Extension
 
                 $argumentReferences = \array_merge(...$argumentReferences);
 
-                $argumentsServiceDefinition->setArguments($argumentReferences);
+                $argumentsServiceDef->setArguments($argumentReferences);
 
-                $container->setDefinition($argumentsServiceId, $argumentsServiceDefinition);
+                $container->setDefinition($argumentsServiceId, $argumentsServiceDef);
             }
 
             // Create exchange definition service definition
             $exchangeDefinitionServiceId = \sprintf('fivelab.amqp.exchange_definition.%s', $key);
-            $exchangeDefinitionServiceDefinition = new ChildDefinition('fivelab.amqp.definition.exchange.abstract');
+            $exchangeDefinitionServiceDef = new ChildDefinition('fivelab.amqp.definition.exchange.abstract');
 
-            $exchangeDefinitionServiceDefinition
+            $exchangeDefinitionServiceDef
                 ->replaceArgument(0, 'amq.default' === $exchange['name'] ? '' : $exchange['name'])
                 ->replaceArgument(1, $exchange['type'])
                 ->replaceArgument(2, (bool) $exchange['durable'])
@@ -420,22 +402,23 @@ class AmqpExtension extends Extension
                 ->replaceArgument(5, new Reference($bindingsServiceId))
                 ->replaceArgument(6, new Reference($unbindingsServiceId));
 
-            $container->setDefinition($exchangeDefinitionServiceId, $exchangeDefinitionServiceDefinition);
+            $container->setDefinition($exchangeDefinitionServiceId, $exchangeDefinitionServiceDef);
 
             // Create exchange factory service definition
             $exchangeFactoryServiceId = \sprintf('fivelab.amqp.exchange_factory.%s', $key);
-            $exchangeFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.exchange_factory.abstract');
+            $exchangeFactoryServiceDef = new Definition(ExchangeFactoryInterface::class);
+            $exchangeFactoryServiceDef->setFactory([new Reference($this->driverFactories[$exchange['connection']]), 'createExchangeFactory']);
+            $exchangeFactoryServiceDef->setArguments([
+                new Reference($this->defaultChannelFactories[$exchange['connection']]),
+                new Reference($exchangeDefinitionServiceId),
+            ]);
 
-            $exchangeFactoryServiceDefinition
-                ->replaceArgument(0, new Reference($this->defaultChannelFactories[$exchange['connection']]))
-                ->replaceArgument(1, new Reference($exchangeDefinitionServiceId));
-
-            $container->setDefinition($exchangeFactoryServiceId, $exchangeFactoryServiceDefinition);
+            $container->setDefinition($exchangeFactoryServiceId, $exchangeFactoryServiceDef);
 
             $this->exchangeFactories[$key] = $exchangeFactoryServiceId;
             $this->exchangeConnections[$key] = $exchange['connection'];
 
-            $registryDefinition->addMethodCall('add', [
+            $registryDef->addMethodCall('add', [
                 $key,
                 new Reference($exchangeFactoryServiceId),
             ]);
@@ -458,7 +441,7 @@ class AmqpExtension extends Extension
             // Configure bindings
             $bindingReferences = [];
             $bindingsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.bindings', $key);
-            $bindingsServiceDefinition = new ChildDefinition('fivelab.amqp.definition.bindings');
+            $bindingsServiceDef = new ChildDefinition('fivelab.amqp.definition.bindings');
 
             foreach ($queue['bindings'] as $binding) {
                 $bindingServiceId = \sprintf(
@@ -468,22 +451,22 @@ class AmqpExtension extends Extension
                     $binding['routing']
                 );
 
-                $bindingServiceDefinition = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
-                $bindingServiceDefinition
+                $bindingServiceDef = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
+                $bindingServiceDef
                     ->replaceArgument(0, $binding['exchange'])
                     ->replaceArgument(1, $binding['routing']);
 
-                $container->setDefinition($bindingServiceId, $bindingServiceDefinition);
+                $container->setDefinition($bindingServiceId, $bindingServiceDef);
 
                 $bindingReferences[] = new Reference($bindingServiceId);
             }
 
-            $bindingsServiceDefinition->setArguments($bindingReferences);
-            $container->setDefinition($bindingsServiceId, $bindingsServiceDefinition);
+            $bindingsServiceDef->setArguments($bindingReferences);
+            $container->setDefinition($bindingsServiceId, $bindingsServiceDef);
 
             $unbingingReferences = [];
             $unbindingsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.unbindings', $key);
-            $unbindingsServiceDefinition = new ChildDefinition('fivelab.amqp.definition.bindings');
+            $unbindingsServiceDef = new ChildDefinition('fivelab.amqp.definition.bindings');
 
             foreach ($queue['unbindings'] as $unbinding) {
                 $unbindingServiceId = \sprintf(
@@ -493,18 +476,18 @@ class AmqpExtension extends Extension
                     $unbinding['routing']
                 );
 
-                $unbindingServiceDefinition = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
-                $unbindingServiceDefinition
+                $unbindingServiceDef = new ChildDefinition('fivelab.amqp.definition.binding.abstract');
+                $unbindingServiceDef
                     ->replaceArgument(0, $unbinding['exchange'])
                     ->replaceArgument(1, $unbinding['routing']);
 
-                $container->setDefinition($unbindingServiceId, $unbindingServiceDefinition);
+                $container->setDefinition($unbindingServiceId, $unbindingServiceDef);
 
                 $unbingingReferences[] = new Reference($unbindingServiceId);
             }
 
-            $unbindingsServiceDefinition->setArguments($unbingingReferences);
-            $container->setDefinition($unbindingsServiceId, $unbindingsServiceDefinition);
+            $unbindingsServiceDef->setArguments($unbingingReferences);
+            $container->setDefinition($unbindingsServiceId, $unbindingsServiceDef);
 
             // Create arguments
             $argumentsServiceId = null;
@@ -513,7 +496,7 @@ class AmqpExtension extends Extension
                 $queueArguments = $queue['arguments'];
 
                 $argumentsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.arguments', $key);
-                $argumentsServiceDefinition = new ChildDefinition('fivelab.amqp.definition.arguments.abstract');
+                $argumentsServiceDef = new ChildDefinition('fivelab.amqp.definition.arguments.abstract');
                 $argumentReferences = [[]];
 
                 $possibleArguments = [
@@ -559,16 +542,16 @@ class AmqpExtension extends Extension
 
                 $argumentReferences = \array_merge(...$argumentReferences);
 
-                $argumentsServiceDefinition->setArguments($argumentReferences);
+                $argumentsServiceDef->setArguments($argumentReferences);
 
-                $container->setDefinition($argumentsServiceId, $argumentsServiceDefinition);
+                $container->setDefinition($argumentsServiceId, $argumentsServiceDef);
             }
 
             // Configure queue definition service definition
             $queueDefinitionServiceId = \sprintf('fivelab.amqp.queue_definition.%s', $key);
-            $queueDefinitionServiceDefinition = new ChildDefinition('fivelab.amqp.definition.queue.abstract');
+            $queueDefinitionServiceDef = new ChildDefinition('fivelab.amqp.definition.queue.abstract');
 
-            $queueDefinitionServiceDefinition
+            $queueDefinitionServiceDef
                 ->replaceArgument(0, $queue['name'])
                 ->replaceArgument(1, new Reference($bindingsServiceId))
                 ->replaceArgument(2, new Reference($unbindingsServiceId))
@@ -578,17 +561,18 @@ class AmqpExtension extends Extension
                 ->replaceArgument(6, (bool) $queue['auto_delete'])
                 ->replaceArgument(7, $argumentsServiceId ? new Reference($argumentsServiceId) : null);
 
-            $container->setDefinition($queueDefinitionServiceId, $queueDefinitionServiceDefinition);
+            $container->setDefinition($queueDefinitionServiceId, $queueDefinitionServiceDef);
 
             // Configure queue factory service definition
             $queueFactoryServiceId = \sprintf('fivelab.amqp.queue_factory.%s', $key);
-            $queueFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.queue_factory.abstract');
+            $queueFactoryServiceDef = new Definition(QueueFactoryInterface::class);
+            $queueFactoryServiceDef->setFactory([new Reference($this->driverFactories[$queue['connection']]), 'createQueueFactory']);
+            $queueFactoryServiceDef->setArguments([
+                new Reference($this->defaultChannelFactories[$queue['connection']]),
+                new Reference($queueDefinitionServiceId),
+            ]);
 
-            $queueFactoryServiceDefinition
-                ->replaceArgument(0, new Reference($this->defaultChannelFactories[$queue['connection']]))
-                ->replaceArgument(1, new Reference($queueDefinitionServiceId));
-
-            $container->setDefinition($queueFactoryServiceId, $queueFactoryServiceDefinition);
+            $container->setDefinition($queueFactoryServiceId, $queueFactoryServiceDef);
 
             $this->queueFactories[$key] = $queueFactoryServiceId;
             $this->queueConnections[$key] = $queue['connection'];
@@ -611,7 +595,7 @@ class AmqpExtension extends Extension
      */
     private function configureConsumers(ContainerBuilder $container, array $consumers, array $globalMiddlewares): void
     {
-        $consumerRegistryDefinition = $container->getDefinition('fivelab.amqp.consumer_registry');
+        $consumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_registry');
 
         foreach ($consumers as $key => $consumer) {
             if (!\array_key_exists($consumer['queue'], $this->queueFactories)) {
@@ -649,13 +633,13 @@ class AmqpExtension extends Extension
                 $queueDefinitionServiceId = \sprintf('fivelab.amqp.queue_definition.%s', $consumer['queue']);
 
                 $queueFactoryServiceId = \sprintf('fivelab.amqp.queue_factory.%s.%s', $consumer['queue'], $key);
-                $queueFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.queue_factory.abstract');
+                $queueFactoryServiceDef = new ChildDefinition('fivelab.amqp.queue_factory.abstract');
 
-                $queueFactoryServiceDefinition
+                $queueFactoryServiceDef
                     ->replaceArgument(0, new Reference($channelFactoryServiceId))
                     ->replaceArgument(1, new Reference($queueDefinitionServiceId));
 
-                $container->setDefinition($queueFactoryServiceId, $queueFactoryServiceDefinition);
+                $container->setDefinition($queueFactoryServiceId, $queueFactoryServiceDef);
             } else {
                 $queueFactoryServiceId = $this->queueFactories[$consumer['queue']];
             }
@@ -668,22 +652,22 @@ class AmqpExtension extends Extension
             }, $consumerMiddlewares);
 
             $middlewareServiceId = \sprintf('fivelab.amqp.consumer.%s.middlewares', $key);
-            $middlewareServiceDefinition = new ChildDefinition('fivelab.amqp.consumer.middlewares.abstract');
-            $middlewareServiceDefinition->setArguments($middlewareList);
+            $middlewareServiceDef = new ChildDefinition('fivelab.amqp.consumer.middlewares.abstract');
+            $middlewareServiceDef->setArguments($middlewareList);
 
-            $container->setDefinition($middlewareServiceId, $middlewareServiceDefinition);
+            $container->setDefinition($middlewareServiceId, $middlewareServiceDef);
 
             // Configure message handler for consumer
             $messageHandlersServiceId = \sprintf('fivelab.amqp.consumer.%s.message_handler', $key);
-            $messageHandlersServiceDefinition = new ChildDefinition('fivelab.amqp.consumer.message_handler.abstract');
+            $messageHandlersServiceDef = new ChildDefinition('fivelab.amqp.consumer.message_handler.abstract');
 
             $index = 0;
 
             foreach ($consumer['message_handlers'] as $messageHandler) {
-                $messageHandlersServiceDefinition->setArgument($index++, new Reference($messageHandler));
+                $messageHandlersServiceDef->setArgument($index++, new Reference($messageHandler));
             }
 
-            $container->setDefinition($messageHandlersServiceId, $messageHandlersServiceDefinition);
+            $container->setDefinition($messageHandlersServiceId, $messageHandlersServiceDef);
 
             // Configure consumer
             $consumerServiceId = \sprintf('fivelab.amqp.consumer.%s', $key);
@@ -696,16 +680,16 @@ class AmqpExtension extends Extension
             if ('single' === $consumer['mode']) {
                 // Configure single consumer
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
-                $consumerConfigurationServiceDefinition = new ChildDefinition('fivelab.amqp.consumer_single.configuration.abstract');
+                $consumerConfigurationServiceDef = new ChildDefinition('fivelab.amqp.consumer_single.configuration.abstract');
 
-                $consumerConfigurationServiceDefinition
+                $consumerConfigurationServiceDef
                     ->replaceArgument(0, $consumer['options']['requeue_on_error'])
                     ->replaceArgument(1, $consumer['options']['prefetch_count'])
                     ->replaceArgument(2, $tagNameGenerator);
 
-                $consumerServiceDefinition = new ChildDefinition('fivelab.amqp.consumer_single.abstract');
+                $consumerServiceDef = new ChildDefinition('fivelab.amqp.consumer_single.abstract');
 
-                $consumerServiceDefinition
+                $consumerServiceDef
                     ->replaceArgument(0, new Reference($queueFactoryServiceId))
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
@@ -713,35 +697,35 @@ class AmqpExtension extends Extension
             } elseif ('spool' === $consumer['mode']) {
                 // Configure spool consumer
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
-                $consumerConfigurationServiceDefinition = new ChildDefinition('fivelab.amqp.consumer_spool.configuration.abstract');
+                $consumerConfigurationServiceDef = new ChildDefinition('fivelab.amqp.consumer_spool.configuration.abstract');
 
-                $consumerConfigurationServiceDefinition
+                $consumerConfigurationServiceDef
                     ->replaceArgument(0, $consumer['options']['prefetch_count'])
                     ->replaceArgument(1, $consumer['options']['timeout'])
                     ->replaceArgument(2, $consumer['options']['read_timeout'])
                     ->replaceArgument(3, $consumer['options']['requeue_on_error'])
                     ->replaceArgument(4, $tagNameGenerator);
 
-                $consumerServiceDefinition = new ChildDefinition('fivelab.amqp.consumer_spool.abstract');
+                $consumerServiceDef = new ChildDefinition('fivelab.amqp.consumer_spool.abstract');
 
-                $consumerServiceDefinition
+                $consumerServiceDef
                     ->replaceArgument(0, new Reference($queueFactoryServiceId))
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
                     ->replaceArgument(3, new Reference($consumerConfigurationServiceId));
             } elseif ('loop' === $consumer['mode']) {
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
-                $consumerConfigurationServiceDefinition = new ChildDefinition('fivelab.amqp.consumer_loop.configuration.abstract');
+                $consumerConfigurationServiceDef = new ChildDefinition('fivelab.amqp.consumer_loop.configuration.abstract');
 
-                $consumerConfigurationServiceDefinition
+                $consumerConfigurationServiceDef
                     ->replaceArgument(0, $consumer['options']['read_timeout'])
                     ->replaceArgument(1, $consumer['options']['requeue_on_error'])
                     ->replaceArgument(2, $consumer['options']['prefetch_count'])
                     ->replaceArgument(3, $tagNameGenerator);
 
-                $consumerServiceDefinition = new ChildDefinition('fivelab.amqp.consumer_loop.abstract');
+                $consumerServiceDef = new ChildDefinition('fivelab.amqp.consumer_loop.abstract');
 
-                $consumerServiceDefinition
+                $consumerServiceDef
                     ->replaceArgument(0, new Reference($queueFactoryServiceId))
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
@@ -753,15 +737,15 @@ class AmqpExtension extends Extension
                 ));
             }
 
-            $container->setDefinition($consumerConfigurationServiceId, $consumerConfigurationServiceDefinition);
-            $container->setDefinition($consumerServiceId, $consumerServiceDefinition);
+            $container->setDefinition($consumerConfigurationServiceId, $consumerConfigurationServiceDef);
+            $container->setDefinition($consumerServiceId, $consumerServiceDef);
 
             $this->consumers[$key] = new Reference($consumerServiceId);
         }
 
         $locatorRef = ServiceLocatorTagPass::register($container, $this->consumers);
 
-        $consumerRegistryDefinition->replaceArgument(0, $locatorRef);
+        $consumerRegistryDef->replaceArgument(0, $locatorRef);
 
         $container->setParameter('fivelab.amqp.consumers', \array_keys($this->consumers));
     }
@@ -775,7 +759,7 @@ class AmqpExtension extends Extension
      */
     private function configurePublishers(ContainerBuilder $container, array $publishers, array $globalMiddlewares): void
     {
-        $publishersRegistryDefinition = $container->getDefinition('fivelab.amqp.publisher_registry');
+        $publishersRegistryDef = $container->getDefinition('fivelab.amqp.publisher_registry');
 
         foreach ($publishers as $key => $publisher) {
             if (!\array_key_exists($publisher['exchange'], $this->exchangeFactories)) {
@@ -808,18 +792,18 @@ class AmqpExtension extends Extension
                     ));
                 }
 
+                $driverFactoryServiceId = $this->driverFactories[$this->channelConnections[$publisher['channel']]];
+
                 // Create new exchange factory with created exchange definition.
                 $channelFactoryServiceId = $this->channelFactories[$publisher['channel']];
                 $exchangeDefinitionServiceId = \sprintf('fivelab.amqp.exchange_definition.%s', $publisher['exchange']);
 
                 $exchangeFactoryServiceId = \sprintf('fivelab.amqp.exchange_factory.%s.%s', $publisher['exchange'], $key);
-                $exchangeFactoryServiceDefinition = new ChildDefinition('fivelab.amqp.exchange_factory.abstract');
+                $exchangeFactoryServiceDef = new Definition(ExchangeFactoryInterface::class);
+                $exchangeFactoryServiceDef->setFactory([new Reference($driverFactoryServiceId), 'createExchangeFactory']);
+                $exchangeFactoryServiceDef->setArguments([new Reference($channelFactoryServiceId), new Reference($exchangeDefinitionServiceId)]);
 
-                $exchangeFactoryServiceDefinition
-                    ->replaceArgument(0, new Reference($channelFactoryServiceId))
-                    ->replaceArgument(1, new Reference($exchangeDefinitionServiceId));
-
-                $container->setDefinition($exchangeFactoryServiceId, $exchangeFactoryServiceDefinition);
+                $container->setDefinition($exchangeFactoryServiceId, $exchangeFactoryServiceDef);
             } else {
                 // Use default channel
                 $exchangeFactoryServiceId = $this->exchangeFactories[$publisher['exchange']];
@@ -833,42 +817,42 @@ class AmqpExtension extends Extension
             }, $publisherMiddlewares);
 
             $middlewareServiceId = \sprintf('fivelab.amqp.publisher.%s.middlewares', $key);
-            $middlewareServiceDefinition = new ChildDefinition('fivelab.amqp.publisher.middlewares.abstract');
-            $middlewareServiceDefinition->setArguments($middlewareList);
+            $middlewareServiceDef = new ChildDefinition('fivelab.amqp.publisher.middlewares.abstract');
+            $middlewareServiceDef->setArguments($middlewareList);
 
-            $container->setDefinition($middlewareServiceId, $middlewareServiceDefinition);
+            $container->setDefinition($middlewareServiceId, $middlewareServiceDef);
 
             // Configure publisher
             $publisherServiceId = \sprintf('fivelab.amqp.publisher.%s', $key);
 
             if ($publisher['savepoint']) {
                 // Create original publisher
-                $originalPublisherServiceDefinition = new ChildDefinition('fivelab.amqp.publisher.abstract');
+                $originalPublisherServiceDef = new ChildDefinition('fivelab.amqp.publisher.abstract');
 
-                $originalPublisherServiceDefinition
+                $originalPublisherServiceDef
                     ->replaceArgument(0, new Reference($exchangeFactoryServiceId))
                     ->replaceArgument(1, new Reference($middlewareServiceId));
 
-                $container->setDefinition($publisherServiceId.'.origin', $originalPublisherServiceDefinition);
+                $container->setDefinition($publisherServiceId.'.origin', $originalPublisherServiceDef);
 
                 // Create decorator
-                $publisherServiceDefinition = new ChildDefinition('fivelab.amqp.publisher.savepoint.abstract');
+                $publisherServiceDef = new ChildDefinition('fivelab.amqp.publisher.savepoint.abstract');
 
-                $publisherServiceDefinition
+                $publisherServiceDef
                     ->replaceArgument(0, new Reference($publisherServiceId.'.origin'));
 
                 $this->savepointPublishers[$key] = $publisherServiceId;
             } else {
-                $publisherServiceDefinition = new ChildDefinition('fivelab.amqp.publisher.abstract');
+                $publisherServiceDef = new ChildDefinition('fivelab.amqp.publisher.abstract');
 
-                $publisherServiceDefinition
+                $publisherServiceDef
                     ->replaceArgument(0, new Reference($exchangeFactoryServiceId))
                     ->replaceArgument(1, new Reference($middlewareServiceId));
             }
 
-            $container->setDefinition($publisherServiceId, $publisherServiceDefinition);
+            $container->setDefinition($publisherServiceId, $publisherServiceDef);
 
-            $publishersRegistryDefinition->addMethodCall('add', [
+            $publishersRegistryDef->addMethodCall('add', [
                 $key,
                 new Reference($publisherServiceId),
             ]);
@@ -986,25 +970,25 @@ class AmqpExtension extends Extension
 
                 $publisherServiceId = $this->publishers[$publisherKey];
 
-                $delayPublisherDefinition = new ChildDefinition('fivelab.amqp.delay.publisher.abstract');
-                $delayPublisherDefinition
+                $delayPublisherDef = new ChildDefinition('fivelab.amqp.delay.publisher.abstract');
+                $delayPublisherDef
                     ->replaceArgument(0, new Reference($publisherServiceId.'.delay.inner'))
                     ->replaceArgument(1, $delayInfo['routing'])
                     ->setDecoratedService($publisherServiceId);
 
-                $container->setDefinition($publisherServiceId.'.delay', $delayPublisherDefinition);
+                $container->setDefinition($publisherServiceId.'.delay', $delayPublisherDef);
             }
 
             // Configure message handler
             $messageHandlerServiceId = \sprintf('fivelab.amqp.delay.message_handler.%s', $key);
             $messageHandlerServiceIds[] = $messageHandlerServiceId;
-            $messageHandlerServiceDefinition = new ChildDefinition('fivelab.amqp.delay.message_handler.abstract');
+            $messageHandlerServiceDef = new ChildDefinition('fivelab.amqp.delay.message_handler.abstract');
 
-            $messageHandlerServiceDefinition
+            $messageHandlerServiceDef
                 ->replaceArgument(1, new Reference($publisherServiceId.'.delay.inner'))
                 ->replaceArgument(2, $delayInfo['routing']);
 
-            $container->setDefinition($messageHandlerServiceId, $messageHandlerServiceDefinition);
+            $container->setDefinition($messageHandlerServiceId, $messageHandlerServiceDef);
         }
 
         // Configure consumer for handle expired messages
