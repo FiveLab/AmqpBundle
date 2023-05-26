@@ -20,7 +20,7 @@
 
     "require": {
         "php": "^8.2",
-        "fivelab/amqp": "dev-master",
+        "fivelab/amqp": "~2.0.0",
         "symfony/dependency-injection": "~5.4 | ~6.0",
         "symfony/framework-bundle": "~5.4 | ~6.0"
     },
