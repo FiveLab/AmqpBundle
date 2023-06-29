@@ -13,6 +13,7 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
+use FiveLab\Bundle\AmqpBundle\Tests\TestEnum;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterExchangeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterRoutingKeyArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\ExpiresArgument;
@@ -25,6 +26,7 @@ use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueMasterLocatorArgument
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueModeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueTypeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\SingleActiveCustomerArgument;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\DependencyInjection\Reference;
@@ -259,6 +261,36 @@ class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
             'fivelab.amqp.queue_definition.default.unbinding.test_bar',
             1,
             'bar'
+        );
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureWithBindingsAsEnum(): void
+    {
+        $this->load([
+            'queues' => [
+                'default' => [
+                    'connection' => 'default',
+                    'bindings'   => [
+                        ['exchange' => TestEnum::Test, 'routing' => TestEnum::Foo],
+                    ],
+                    'unbindings' => [
+                        ['exchange' => TestEnum::Test, 'routing' => TestEnum::Bar],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.queue_definition.default.binding.test_foo',
+            0,
+            'test'
+        );
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.queue_definition.default.binding.test_foo',
+            1,
+            'foo'
         );
     }
 

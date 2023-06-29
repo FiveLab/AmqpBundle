@@ -650,11 +650,19 @@ class Configuration implements ConfigurationInterface
                 ->scalarNode('exchange')
                     ->isRequired()
                     ->info('The exchange for binding.')
+                    ->beforeNormalization()
+                        ->ifTrue(static fn ($value) => $value instanceof \BackedEnum)
+                        ->then(static fn (\BackedEnum $value) => $value->value)
+                    ->end()
                 ->end()
 
                 ->scalarNode('routing')
                     ->isRequired()
                     ->info('The routing key for binding.')
+                    ->beforeNormalization()
+                        ->ifTrue(static fn($value) => $value instanceof \BackedEnum)
+                        ->then(static fn(\BackedEnum $value) => $value->value)
+                    ->end()
                 ->end()
             ->end();
 
