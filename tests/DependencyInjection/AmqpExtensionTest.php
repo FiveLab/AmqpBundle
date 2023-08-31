@@ -124,7 +124,7 @@ class AmqpExtensionTest extends AmqpExtensionTestCase
 
     #[Test]
     #[TestWith([ConsumerRegistryInterface::class, 'fivelab.amqp.consumer_registry'])]
-    #[TestWith([ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry'])]
+    #[TestWith([ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.exchange_factory_registry'])]
     #[TestWith([QueueFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry'])]
     #[TestWith([ConnectionFactoryRegistryInterface::class, 'fivelab.amqp.connection_factory_registry'])]
     #[TestWith([PublisherRegistryInterface::class, 'fivelab.amqp.publisher_registry'])]

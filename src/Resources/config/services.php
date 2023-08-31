@@ -70,7 +70,7 @@ return static function (ContainerConfigurator $container) {
     // Aliases
     $container->services()
         ->alias(ConsumerRegistryInterface::class, 'fivelab.amqp.consumer_registry')
-        ->alias(ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry')
+        ->alias(ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.exchange_factory_registry')
         ->alias(QueueFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry')
         ->alias(ConnectionFactoryRegistryInterface::class, 'fivelab.amqp.connection_factory_registry')
         ->alias(PublisherRegistryInterface::class, 'fivelab.amqp.publisher_registry');
