@@ -1019,7 +1019,7 @@ class AmqpExtension extends Extension
      *
      * @return Reference
      */
-    private function createArgumentDefinition(ContainerBuilder $container, string $serviceId, string $class, ...$values): Reference
+    private function createArgumentDefinition(ContainerBuilder $container, string $serviceId, string $class, mixed ...$values): Reference
     {
         $definition = new Definition($class);
         $definition->setArguments($values);
@@ -1039,7 +1039,7 @@ class AmqpExtension extends Extension
      *
      * @return Reference
      */
-    private function createCustomArgumentDefinition(ContainerBuilder $container, string $serviceId, string $name, $value): Reference
+    private function createCustomArgumentDefinition(ContainerBuilder $container, string $serviceId, string $name, mixed $value): Reference
     {
         $definition = new ChildDefinition('fivelab.amqp.definition.argument.abstract');
 
@@ -1077,11 +1077,11 @@ class AmqpExtension extends Extension
      *
      * @param mixed $value
      *
-     * @return mixed
+     * @return Expression|bool
      */
-    private static function resolveBoolOrExpression($value)
+    private static function resolveBoolOrExpression(mixed $value): Expression|bool
     {
-        if (\is_string($value) && 0 === \strpos($value, '@=')) {
+        if (\is_string($value) && \str_starts_with($value, '@=')) {
             return new Expression(\substr($value, 2));
         }
 
