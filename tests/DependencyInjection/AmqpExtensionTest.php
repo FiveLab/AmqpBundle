@@ -13,6 +13,11 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
+use FiveLab\Bundle\AmqpBundle\Connection\Registry\ConnectionFactoryRegistryInterface;
+use FiveLab\Component\Amqp\Consumer\Registry\ConsumerRegistryInterface;
+use FiveLab\Component\Amqp\Exchange\Registry\ExchangeFactoryRegistryInterface;
+use FiveLab\Component\Amqp\Publisher\Registry\PublisherRegistryInterface;
+use FiveLab\Component\Amqp\Queue\Registry\QueueFactoryRegistryInterface;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\DependencyInjection\Reference;
@@ -115,5 +120,18 @@ class AmqpExtensionTest extends AmqpExtensionTestCase
             'The service "%s" must be public.',
             $registry
         ));
+    }
+
+    #[Test]
+    #[TestWith([ConsumerRegistryInterface::class, 'fivelab.amqp.consumer_registry'])]
+    #[TestWith([ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry'])]
+    #[TestWith([QueueFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry'])]
+    #[TestWith([ConnectionFactoryRegistryInterface::class, 'fivelab.amqp.connection_factory_registry'])]
+    #[TestWith([PublisherRegistryInterface::class, 'fivelab.amqp.publisher_registry'])]
+    public function shouldRegistriesHasAlias(string $alias, string $reference): void
+    {
+        $this->load([]);
+
+        $this->assertContainerBuilderHasAlias($alias, $reference);
     }
 }
