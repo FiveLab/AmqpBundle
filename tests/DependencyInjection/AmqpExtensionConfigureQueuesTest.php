@@ -422,14 +422,15 @@ class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
     {
         $this->load([
             'queue_default_arguments' => [
-                'queue-type' => 'quorum',
+                'queue-type' => 'classic',
             ],
 
             'queues' => [
                 'default' => [
                     'connection' => 'default',
                     'arguments'  => [
-                        'queue-type' => 'classic',
+                        'queue-type'             => 'quorum',
+                        'single-active-consumer' => true,
                     ],
                 ],
             ],
@@ -440,12 +441,15 @@ class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
 
         self::assertEquals([
             new Reference('fivelab.amqp.queue_definition.default.arguments.queue_type'),
+            new Reference('fivelab.amqp.queue_definition.default.arguments.single_active_consumer'),
         ], $argumentsDefinition->getArguments());
 
         $this->assertContainerBuilderHasServiceDefinitionWithArgument(
             'fivelab.amqp.queue_definition.default.arguments.queue_type',
             0,
-            'classic'
+            'quorum'
         );
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.queue_definition.default.arguments.single_active_consumer');
     }
 }

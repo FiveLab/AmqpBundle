@@ -260,42 +260,34 @@ class Configuration implements ConfigurationInterface
             ->children()
                 ->scalarNode('dead-letter-exchange')
                     ->info('Add "x-dead-letter-exchange" argument')
-                    ->defaultValue(null)
                 ->end()
 
                 ->scalarNode('dead-letter-routing-key')
                     ->info('Add "x-dead-letter-routing-key" argument.')
-                    ->defaultValue(null)
                 ->end()
 
                 ->integerNode('expires')
                     ->info('Add "x-expires" argument.')
-                    ->defaultValue(null)
                 ->end()
 
                 ->integerNode('max-length')
                     ->info('Add "x-max-length" argument.')
-                    ->defaultValue(null)
                 ->end()
 
                 ->integerNode('max-length-bytes')
                     ->info('Add "x-max-length-bytes"')
-                    ->defaultValue(null)
                 ->end()
 
                 ->integerNode('max-priority')
                     ->info('Add "x-max-priority" argument.')
-                    ->defaultValue(null)
                 ->end()
 
                 ->integerNode('message-ttl')
                     ->info('Add "x-message-ttl" argument.')
-                    ->defaultValue(null)
                 ->end()
 
                 ->scalarNode('overflow')
                     ->info('Add "x-overflow" argument')
-                    ->defaultValue(null)
                     ->validate()
                         ->ifNotInArray(['drop-head', 'reject-publish', 'reject-publish-dlx'])
                         ->thenInvalid('The overflow mode %s is not valid. Available modes: "drop-head", "reject-publish" and "reject-publish-dlx".')
@@ -304,7 +296,6 @@ class Configuration implements ConfigurationInterface
 
                 ->scalarNode('queue-master-locator')
                     ->info('Add "x-queue-master-locator" argument.')
-                    ->defaultValue(null)
                     ->validate()
                         ->ifNotInArray(['min-masters', 'client-local', 'random'])
                         ->thenInvalid('The queue master locator %s is not valid. Available locators: "min-masters", "client-local" and "random".')
@@ -313,7 +304,6 @@ class Configuration implements ConfigurationInterface
 
                 ->scalarNode('queue-mode')
                     ->info('Add "x-queue-mode" argument.')
-                    ->defaultValue(null)
                     ->validate()
                         ->ifNotInArray(['default', 'lazy'])
                         ->thenInvalid('The queue mode %s is not valid. Available modes: "default" and "lazy".')
@@ -322,7 +312,6 @@ class Configuration implements ConfigurationInterface
 
                 ->scalarNode('queue-type')
                     ->info('Add "x-queue-type" argument.')
-                    ->defaultValue(null)
                     ->validate()
                         ->ifNotInArray(['classic', 'quorum'])
                         ->thenInvalid('The queue type %s is not valid. Available types: "classic" and "quorum".')
@@ -331,11 +320,9 @@ class Configuration implements ConfigurationInterface
 
                 ->booleanNode('single-active-consumer')
                     ->info('Add "x-single-active-consumer" argument.')
-                    ->defaultValue(null)
                 ->end()
 
                 ->arrayNode('custom')
-                    ->defaultValue([])
                     ->example(['x-my-custom-argument' => 'some'])
                     ->normalizeKeys(false)
                     ->prototype('scalar')
