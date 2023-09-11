@@ -40,6 +40,7 @@ class Configuration implements ConfigurationInterface
                 ->append($this->getExchangesNodeDefinition())
                 ->append($this->getQueuesNodeDefinition())
                 ->append($this->getConsumersNodeDefinition())
+                ->append($this->getConsumerEventHandlersNodeDefinition())
                 ->append($this->getPublishersNodeDefinition())
                 ->append($this->getMiddlewareNodeDefinition('consumer_'))
                 ->append($this->getMiddlewareNodeDefinition('publisher_'))
@@ -679,6 +680,23 @@ class Configuration implements ConfigurationInterface
     private function getMiddlewareNodeDefinition(string $nodePrefix = ''): NodeDefinition
     {
         $node = new ArrayNodeDefinition($nodePrefix.'middleware');
+
+        $node
+            ->defaultValue([])
+            ->prototype('scalar')
+            ->end();
+
+        return $node;
+    }
+
+    /**
+     * Get consumer event handlers node
+     *
+     * @return NodeDefinition
+     */
+    private function getConsumerEventHandlersNodeDefinition(): NodeDefinition
+    {
+        $node = new ArrayNodeDefinition('consumer_event_handlers');
 
         $node
             ->defaultValue([])

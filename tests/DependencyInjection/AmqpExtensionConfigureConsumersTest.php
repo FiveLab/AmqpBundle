@@ -15,6 +15,7 @@ namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
@@ -78,6 +79,11 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
                 'middleware1',
                 'middleware2',
             ],
+
+            'consumer_event_handlers' => [
+                'event_handler_1',
+                'event_handler_2',
+            ],
         ]);
 
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo');
@@ -96,6 +102,9 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo', 1, new Reference('fivelab.amqp.consumer.foo.message_handler'));
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo', 2, new Reference('fivelab.amqp.consumer.foo.middlewares'));
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo', 3, new Reference('fivelab.amqp.consumer.foo.configuration'));
+
+        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall('fivelab.amqp.consumer.foo', 'addEventHandler', [new ServiceClosureArgument(new Reference('event_handler_1')), true], 0);
+        $this->assertContainerBuilderHasServiceDefinitionWithMethodCall('fivelab.amqp.consumer.foo', 'addEventHandler', [new ServiceClosureArgument(new Reference('event_handler_2')), true], 1);
 
         // Verify consumer class
         $this->assertContainerBuilderHasServiceDefinitionWithParent('fivelab.amqp.consumer.foo', 'fivelab.amqp.consumer_single.abstract');

@@ -33,6 +33,7 @@ use FiveLab\Component\Amqp\Queue\Definition\Arguments\QueueTypeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\SingleActiveCustomerArgument;
 use FiveLab\Component\Amqp\Queue\QueueFactoryInterface;
 use Symfony\Component\Config\FileLocator;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -150,7 +151,7 @@ class AmqpExtension extends Extension
         $this->configureExchanges($container, $config['exchanges']);
         $this->configureQueues($container, $config['queues']);
         $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
-        $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware']);
+        $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware'], $config['consumer_event_handlers']);
 
         if ($this->isConfigEnabled($container, $config['round_robin'])) {
             $loader->load('round-robin.php');
@@ -161,7 +162,7 @@ class AmqpExtension extends Extension
         if (\array_key_exists('delay', $config) && $config['delay']) {
             $loader->load('delay.php');
 
-            $this->configureDelay($container, $config['delay'], $config['publisher_middleware'], $config['consumer_middleware']);
+            $this->configureDelay($container, $config['delay'], $config['publisher_middleware'], $config['consumer_middleware'], $config['consumer_event_handlers']);
         }
 
         $container->getDefinition('fivelab.amqp.console_command.initialize_exchanges')
@@ -589,11 +590,12 @@ class AmqpExtension extends Extension
     /**
      * Configure consumers
      *
-     * @param ContainerBuilder $container
-     * @param array            $consumers
-     * @param array            $globalMiddlewares
+     * @param ContainerBuilder     $container
+     * @param array<string, mixed> $consumers
+     * @param array<string>        $globalMiddlewares
+     * @param array<string>        $eventHandlers
      */
-    private function configureConsumers(ContainerBuilder $container, array $consumers, array $globalMiddlewares): void
+    private function configureConsumers(ContainerBuilder $container, array $consumers, array $globalMiddlewares, array $eventHandlers): void
     {
         $consumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_registry');
 
@@ -735,6 +737,13 @@ class AmqpExtension extends Extension
                     'Unknown mode "%s".',
                     $consumer['mode']
                 ));
+            }
+
+            foreach ($eventHandlers as $eventHandler) {
+                $consumerServiceDef->addMethodCall(
+                    'addEventHandler',
+                    [new ServiceClosureArgument(new Reference($eventHandler)), true]
+                );
             }
 
             $container->setDefinition($consumerConfigurationServiceId, $consumerConfigurationServiceDef);
@@ -884,12 +893,13 @@ class AmqpExtension extends Extension
     /**
      * Configure delay system
      *
-     * @param ContainerBuilder $container
-     * @param array            $config
-     * @param array            $globalPublisherMiddlewares
-     * @param array            $globalConsumerMiddlewares
+     * @param ContainerBuilder     $container
+     * @param array<string, mixed> $config
+     * @param array<string>        $globalPublisherMiddlewares
+     * @param array<string>        $globalConsumerMiddlewares
+     * @param array<string>        $consumerEventHandlers
      */
-    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares): void
+    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares, array $consumerEventHandlers): void
     {
         // Configure exchange
         $this->configureExchanges($container, [
@@ -1006,7 +1016,7 @@ class AmqpExtension extends Extension
                     'prefetch_count'   => 3,
                 ],
             ],
-        ], $globalConsumerMiddlewares);
+        ], $globalConsumerMiddlewares, $consumerEventHandlers);
     }
 
     /**
