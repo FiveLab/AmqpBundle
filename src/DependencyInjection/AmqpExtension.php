@@ -149,7 +149,7 @@ class AmqpExtension extends Extension
         $this->configureConnections($container, $config['connections']);
         $this->configureChannels($container, $config['channels']);
         $this->configureExchanges($container, $config['exchanges']);
-        $this->configureQueues($container, $config['queues']);
+        $this->configureQueues($container, $config['queues'], $config['queue_default_arguments'] ?? []);
         $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
         $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware'], $config['consumer_event_handlers']);
 
@@ -162,7 +162,14 @@ class AmqpExtension extends Extension
         if (\array_key_exists('delay', $config) && $config['delay']) {
             $loader->load('delay.php');
 
-            $this->configureDelay($container, $config['delay'], $config['publisher_middleware'], $config['consumer_middleware'], $config['consumer_event_handlers']);
+            $this->configureDelay(
+                $container,
+                $config['delay'],
+                $config['publisher_middleware'],
+                $config['consumer_middleware'],
+                $config['consumer_event_handlers'],
+                $config['queue_default_arguments'] ?? []
+            );
         }
 
         $container->getDefinition('fivelab.amqp.console_command.initialize_exchanges')
@@ -431,10 +438,11 @@ class AmqpExtension extends Extension
     /**
      * Configure queues
      *
-     * @param ContainerBuilder $container
-     * @param array            $queues
+     * @param ContainerBuilder     $container
+     * @param array<string, mixed> $queues
+     * @param array<string, mixed> $queueDefaultArguments
      */
-    private function configureQueues(ContainerBuilder $container, array $queues): void
+    private function configureQueues(ContainerBuilder $container, array $queues, array $queueDefaultArguments): void
     {
         $queueRegistry = $container->getDefinition('fivelab.amqp.queue_factory_registry');
 
@@ -493,10 +501,10 @@ class AmqpExtension extends Extension
             // Create arguments
             $argumentsServiceId = null;
 
-            if (\array_key_exists('arguments', $queue)) {
-                $queueArguments = $queue['arguments'];
+            $queueArguments = $queue['arguments'] ?? [];
+            $queueArguments = \array_merge($queueDefaultArguments, $queueArguments);
 
-                $argumentsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.arguments', $key);
+            if (\count($queueArguments)) {
                 $argumentsServiceDef = new ChildDefinition('fivelab.amqp.definition.arguments.abstract');
                 $argumentReferences = [[]];
 
@@ -543,9 +551,12 @@ class AmqpExtension extends Extension
 
                 $argumentReferences = \array_merge(...$argumentReferences);
 
-                $argumentsServiceDef->setArguments($argumentReferences);
+                if (\count($argumentReferences)) {
+                    $argumentsServiceId = \sprintf('fivelab.amqp.queue_definition.%s.arguments', $key);
+                    $argumentsServiceDef->setArguments($argumentReferences);
 
-                $container->setDefinition($argumentsServiceId, $argumentsServiceDef);
+                    $container->setDefinition($argumentsServiceId, $argumentsServiceDef);
+                }
             }
 
             // Configure queue definition service definition
@@ -898,8 +909,9 @@ class AmqpExtension extends Extension
      * @param array<string>        $globalPublisherMiddlewares
      * @param array<string>        $globalConsumerMiddlewares
      * @param array<string>        $consumerEventHandlers
+     * @param array<string, mixed> $queueDefaultArguments
      */
-    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares, array $consumerEventHandlers): void
+    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares, array $consumerEventHandlers, array $queueDefaultArguments): void
     {
         // Configure exchange
         $this->configureExchanges($container, [
@@ -931,7 +943,7 @@ class AmqpExtension extends Extension
                 ],
                 'unbindings'  => [],
             ],
-        ]);
+        ], $queueDefaultArguments);
 
         $messageHandlerServiceIds = [];
 
@@ -949,13 +961,12 @@ class AmqpExtension extends Extension
                     ],
                     'unbindings'  => [],
                     'arguments'   => [
-                        'queue-type'              => 'classic', // Force use classic because quorum not support TTL for messages.
                         'dead-letter-exchange'    => $config['exchange'],
                         'dead-letter-routing-key' => 'message.expired',
                         'message-ttl'             => $delayInfo['ttl'],
                     ],
                 ],
-            ]);
+            ], $queueDefaultArguments);
 
             // Add default publisher
             $delayInfo['publishers'][$key] = [

@@ -39,6 +39,7 @@ class Configuration implements ConfigurationInterface
                 ->append($this->getChannelsNodeDefinition())
                 ->append($this->getExchangesNodeDefinition())
                 ->append($this->getQueuesNodeDefinition())
+                ->append($this->getQueueArgumentsNodeDefinition('queue_default_arguments'))
                 ->append($this->getConsumersNodeDefinition())
                 ->append($this->getConsumerEventHandlersNodeDefinition())
                 ->append($this->getPublishersNodeDefinition())
@@ -237,94 +238,107 @@ class Configuration implements ConfigurationInterface
 
                 ->append($this->getBindingsNodeDefinition('bindings'))
                 ->append($this->getBindingsNodeDefinition('unbindings'))
+                ->append($this->getQueueArgumentsNodeDefinition('arguments'))
+            ->end();
 
-                ->arrayNode('arguments')
+        return $node;
+    }
+
+    /**
+     * Get arguments node for declare queue
+     *
+     * @param string $name
+     *
+     * @return ArrayNodeDefinition
+     */
+    private function getQueueArgumentsNodeDefinition(string $name = 'arguments'): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition($name);
+
+        $node
+            ->normalizeKeys(false)
+            ->children()
+                ->scalarNode('dead-letter-exchange')
+                    ->info('Add "x-dead-letter-exchange" argument')
+                    ->defaultValue(null)
+                ->end()
+
+                ->scalarNode('dead-letter-routing-key')
+                    ->info('Add "x-dead-letter-routing-key" argument.')
+                    ->defaultValue(null)
+                ->end()
+
+                ->integerNode('expires')
+                    ->info('Add "x-expires" argument.')
+                    ->defaultValue(null)
+                ->end()
+
+                ->integerNode('max-length')
+                    ->info('Add "x-max-length" argument.')
+                    ->defaultValue(null)
+                ->end()
+
+                ->integerNode('max-length-bytes')
+                    ->info('Add "x-max-length-bytes"')
+                    ->defaultValue(null)
+                ->end()
+
+                ->integerNode('max-priority')
+                    ->info('Add "x-max-priority" argument.')
+                    ->defaultValue(null)
+                ->end()
+
+                ->integerNode('message-ttl')
+                    ->info('Add "x-message-ttl" argument.')
+                    ->defaultValue(null)
+                ->end()
+
+                ->scalarNode('overflow')
+                    ->info('Add "x-overflow" argument')
+                    ->defaultValue(null)
+                    ->validate()
+                        ->ifNotInArray(['drop-head', 'reject-publish', 'reject-publish-dlx'])
+                        ->thenInvalid('The overflow mode %s is not valid. Available modes: "drop-head", "reject-publish" and "reject-publish-dlx".')
+                    ->end()
+                ->end()
+
+                ->scalarNode('queue-master-locator')
+                    ->info('Add "x-queue-master-locator" argument.')
+                    ->defaultValue(null)
+                    ->validate()
+                        ->ifNotInArray(['min-masters', 'client-local', 'random'])
+                        ->thenInvalid('The queue master locator %s is not valid. Available locators: "min-masters", "client-local" and "random".')
+                    ->end()
+                ->end()
+
+                ->scalarNode('queue-mode')
+                    ->info('Add "x-queue-mode" argument.')
+                    ->defaultValue(null)
+                    ->validate()
+                        ->ifNotInArray(['default', 'lazy'])
+                        ->thenInvalid('The queue mode %s is not valid. Available modes: "default" and "lazy".')
+                    ->end()
+                ->end()
+
+                ->scalarNode('queue-type')
+                    ->info('Add "x-queue-type" argument.')
+                    ->defaultValue(null)
+                    ->validate()
+                        ->ifNotInArray(['classic', 'quorum'])
+                        ->thenInvalid('The queue type %s is not valid. Available types: "classic" and "quorum".')
+                    ->end()
+                ->end()
+
+                ->booleanNode('single-active-consumer')
+                    ->info('Add "x-single-active-consumer" argument.')
+                    ->defaultValue(null)
+                ->end()
+
+                ->arrayNode('custom')
+                    ->defaultValue([])
+                    ->example(['x-my-custom-argument' => 'some'])
                     ->normalizeKeys(false)
-                    ->addDefaultsIfNotSet()
-                    ->children()
-                        ->scalarNode('dead-letter-exchange')
-                            ->info('Add "x-dead-letter-exchange" argument')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->scalarNode('dead-letter-routing-key')
-                            ->info('Add "x-dead-letter-routing-key" argument.')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->integerNode('expires')
-                            ->info('Add "x-expires" argument.')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->integerNode('max-length')
-                            ->info('Add "x-max-length" argument.')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->integerNode('max-length-bytes')
-                            ->info('Add "x-max-length-bytes"')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->integerNode('max-priority')
-                            ->info('Add "x-max-priority" argument.')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->integerNode('message-ttl')
-                            ->info('Add "x-message-ttl" argument.')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->scalarNode('overflow')
-                            ->info('Add "x-overflow" argument')
-                            ->defaultValue(null)
-                            ->validate()
-                                ->ifNotInArray(['drop-head', 'reject-publish', 'reject-publish-dlx'])
-                                ->thenInvalid('The overflow mode %s is not valid. Available modes: "drop-head", "reject-publish" and "reject-publish-dlx".')
-                            ->end()
-                        ->end()
-
-                        ->scalarNode('queue-master-locator')
-                            ->info('Add "x-queue-master-locator" argument.')
-                            ->defaultValue(null)
-                            ->validate()
-                                ->ifNotInArray(['min-masters', 'client-local', 'random'])
-                                ->thenInvalid('The queue master locator %s is not valid. Available locators: "min-masters", "client-local" and "random".')
-                            ->end()
-                        ->end()
-
-                        ->scalarNode('queue-mode')
-                            ->info('Add "x-queue-mode" argument.')
-                            ->defaultValue(null)
-                            ->validate()
-                                ->ifNotInArray(['default', 'lazy'])
-                                ->thenInvalid('The queue mode %s is not valid. Available modes: "default" and "lazy".')
-                            ->end()
-                        ->end()
-
-                        ->scalarNode('queue-type')
-                            ->info('Add "x-queue-type" argument.')
-                            ->defaultValue(null)
-                            ->validate()
-                                ->ifNotInArray(['classic', 'quorum'])
-                                ->thenInvalid('The queue type %s is not valid. Available types: "classic" and "quorum".')
-                            ->end()
-                        ->end()
-
-                        ->booleanNode('single-active-consumer')
-                            ->info('Add "x-single-active-consumer" argument.')
-                            ->defaultValue(null)
-                        ->end()
-
-                        ->arrayNode('custom')
-                            ->defaultValue([])
-                            ->example(['x-my-custom-argument' => 'some'])
-                            ->normalizeKeys(false)
-                            ->prototype('scalar')
-                            ->end()
-                        ->end()
+                    ->prototype('scalar')
                     ->end()
                 ->end()
             ->end();

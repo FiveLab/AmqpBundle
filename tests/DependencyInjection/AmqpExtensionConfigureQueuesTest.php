@@ -80,13 +80,13 @@ class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
 
         self::assertEquals([
             'default',
-            'fivelab.amqp.queue_definition.default.bindings',
-            'fivelab.amqp.queue_definition.default.unbindings',
+            new Reference('fivelab.amqp.queue_definition.default.bindings'),
+            new Reference('fivelab.amqp.queue_definition.default.unbindings'),
             true,
             false,
             false,
             false,
-            new Reference('fivelab.amqp.queue_definition.default.arguments'),
+            null,
         ], \array_values($queueDefinition->getArguments()));
     }
 
@@ -151,13 +151,13 @@ class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
 
         self::assertEquals([
             'my-test',
-            'fivelab.amqp.queue_definition.default.bindings',
-            'fivelab.amqp.queue_definition.default.unbindings',
+            new Reference('fivelab.amqp.queue_definition.default.bindings'),
+            new Reference('fivelab.amqp.queue_definition.default.unbindings'),
             false,
             true,
             true,
             true,
-            new Reference('fivelab.amqp.queue_definition.default.arguments'),
+            null,
         ], \array_values($queueDefinition->getArguments()));
     }
 
@@ -385,6 +385,67 @@ class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
             'fivelab.amqp.queue_definition.default.arguments.x_some_too',
             1,
             'bar'
+        );
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureWithDefaultArguments(): void
+    {
+        $this->load([
+            'queue_default_arguments' => [
+                'queue-type' => 'quorum',
+            ],
+
+            'queues' => [
+                'default' => [
+                    'connection' => 'default',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.queue_definition.default.arguments');
+        $argumentsDefinition = $this->container->getDefinition('fivelab.amqp.queue_definition.default.arguments');
+
+        self::assertEquals([
+            new Reference('fivelab.amqp.queue_definition.default.arguments.queue_type'),
+        ], $argumentsDefinition->getArguments());
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.queue_definition.default.arguments.queue_type',
+            0,
+            'quorum'
+        );
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureWithDefaultArgumentsAndCorrectInherited(): void
+    {
+        $this->load([
+            'queue_default_arguments' => [
+                'queue-type' => 'quorum',
+            ],
+
+            'queues' => [
+                'default' => [
+                    'connection' => 'default',
+                    'arguments'  => [
+                        'queue-type' => 'classic',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.queue_definition.default.arguments');
+        $argumentsDefinition = $this->container->getDefinition('fivelab.amqp.queue_definition.default.arguments');
+
+        self::assertEquals([
+            new Reference('fivelab.amqp.queue_definition.default.arguments.queue_type'),
+        ], $argumentsDefinition->getArguments());
+
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument(
+            'fivelab.amqp.queue_definition.default.arguments.queue_type',
+            0,
+            'classic'
         );
     }
 }

@@ -123,13 +123,11 @@ class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
             new Reference('fivelab.amqp.queue_definition.delay.5second.arguments.dead_letter_exchange'),
             new Reference('fivelab.amqp.queue_definition.delay.5second.arguments.dead_letter_routing_key'),
             new Reference('fivelab.amqp.queue_definition.delay.5second.arguments.message_ttl'),
-            new Reference('fivelab.amqp.queue_definition.delay.5second.arguments.queue_type'),
         ], \array_values($this->container->getDefinition('fivelab.amqp.queue_definition.delay.5second.arguments')->getArguments()));
 
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.queue_definition.delay.5second.arguments.dead_letter_exchange', 0, 'delay');
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.queue_definition.delay.5second.arguments.dead_letter_routing_key', 0, 'message.expired');
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.queue_definition.delay.5second.arguments.message_ttl', 0, 5000);
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.queue_definition.delay.5second.arguments.queue_type', 0, 'classic');
 
         // Check publisher
         $this->assertContainerBuilderHasService('fivelab.amqp.publisher.5second');
