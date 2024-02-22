@@ -609,6 +609,9 @@ class AmqpExtension extends Extension
     private function configureConsumers(ContainerBuilder $container, array $consumers, array $globalMiddlewares, array $eventHandlers): void
     {
         $consumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_registry');
+        $checkConsumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_checker_registry');
+
+        $consumerCheckers = [];
 
         foreach ($consumers as $key => $consumer) {
             if (!\array_key_exists($consumer['queue'], $this->queueFactories)) {
@@ -617,6 +620,11 @@ class AmqpExtension extends Extension
                     $key,
                     $consumer['queue']
                 ));
+            }
+
+            // Add checker to registry, if configured
+            if ($consumer['checker']) {
+                $consumerCheckers[$key] = new Reference($consumer['checker']);
             }
 
             if ($consumer['channel']) {
@@ -763,9 +771,11 @@ class AmqpExtension extends Extension
             $this->consumers[$key] = new Reference($consumerServiceId);
         }
 
-        $locatorRef = ServiceLocatorTagPass::register($container, $this->consumers);
+        $consumersLocatorRef = ServiceLocatorTagPass::register($container, $this->consumers);
+        $consumerRegistryDef->replaceArgument(0, $consumersLocatorRef);
 
-        $consumerRegistryDef->replaceArgument(0, $locatorRef);
+        $checkersLocatorRef = ServiceLocatorTagPass::register($container, $consumerCheckers);
+        $checkConsumerRegistryDef->replaceArgument(0, $checkersLocatorRef);
 
         $container->setParameter('fivelab.amqp.consumers', \array_keys($this->consumers));
     }
@@ -1019,6 +1029,7 @@ class AmqpExtension extends Extension
                 'mode'             => 'loop',
                 'channel'          => '',
                 'message_handlers' => $messageHandlerServiceIds,
+                'checker'          => '',
                 'middleware'       => [],
                 'tag_generator'    => '',
                 'options'          => [

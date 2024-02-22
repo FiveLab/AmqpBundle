@@ -13,6 +13,7 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
+use FiveLab\Component\Amqp\Consumer\Checker\ContainerRunConsumerCheckerRegistry;
 use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
@@ -126,6 +127,30 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer_registry', ContainerConsumerRegistry::class);
         $this->assertContainerBuilderHasServiceDefinitionWithServiceLocatorArgument('fivelab.amqp.consumer_registry', 0, [
             'foo' => 'fivelab.amqp.consumer.foo',
+        ]);
+
+        // Verify checker registry
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer_checker_registry', ContainerRunConsumerCheckerRegistry::class);
+        $this->assertContainerBuilderHasServiceDefinitionWithServiceLocatorArgument('fivelab.amqp.consumer_checker_registry', 0, []);
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureWithChecker(): void
+    {
+        $this->load([
+            'consumers' => [
+                'bla' => [
+                    'mode'             => 'single',
+                    'queue'            => 'default',
+                    'message_handlers' => 'default',
+                    'checker'          => 'default_checker',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer_checker_registry', ContainerRunConsumerCheckerRegistry::class);
+        $this->assertContainerBuilderHasServiceDefinitionWithServiceLocatorArgument('fivelab.amqp.consumer_checker_registry', 0, [
+            'bla' => 'default_checker',
         ]);
     }
 

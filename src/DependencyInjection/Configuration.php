@@ -414,6 +414,11 @@ class Configuration implements ConfigurationInterface
                     ->info('The service id of tag name generator for consumer.')
                 ->end()
 
+                ->scalarNode('checker')
+                    ->defaultNull()
+                    ->info('The service id of service for check requirements before run consumer.')
+                ->end()
+
                 ->arrayNode('message_handlers')
                     ->isRequired()
                     ->info('The list of service ids of message handlers.')

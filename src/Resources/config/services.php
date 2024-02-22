@@ -6,6 +6,8 @@ use FiveLab\Component\Amqp\Command\InitializeExchangesCommand;
 use FiveLab\Component\Amqp\Command\InitializeQueuesCommand;
 use FiveLab\Component\Amqp\Command\ListConsumersCommand;
 use FiveLab\Component\Amqp\Command\RunConsumerCommand;
+use FiveLab\Component\Amqp\Consumer\Checker\ContainerRunConsumerCheckerRegistry;
+use FiveLab\Component\Amqp\Consumer\Checker\RunConsumerCheckerRegistryInterface;
 use FiveLab\Component\Amqp\Consumer\Registry\ConsumerRegistryInterface;
 use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
 use FiveLab\Component\Amqp\Exchange\Registry\ExchangeFactoryRegistry;
@@ -23,7 +25,8 @@ return static function (ContainerConfigurator $container) {
     $container->services()
         ->set('fivelab.amqp.console_command.run_consumer', RunConsumerCommand::class)
             ->args([
-                service('fivelab.amqp.consumer_registry')
+                service('fivelab.amqp.consumer_registry'),
+                service('fivelab.amqp.consumer_checker_registry')
             ])
             ->tag('console.command')
 
@@ -55,6 +58,12 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('service locator')
             ])
 
+        ->set('fivelab.amqp.consumer_checker_registry', ContainerRunConsumerCheckerRegistry::class)
+            ->public()
+            ->args([
+                abstract_arg('service locator')
+            ])
+
         ->set('fivelab.amqp.exchange_factory_registry', ExchangeFactoryRegistry::class)
             ->public()
 
@@ -70,6 +79,7 @@ return static function (ContainerConfigurator $container) {
     // Aliases
     $container->services()
         ->alias(ConsumerRegistryInterface::class, 'fivelab.amqp.consumer_registry')
+        ->alias(RunConsumerCheckerRegistryInterface::class, 'fivelab.amqp.consumer_checker_registry')
         ->alias(ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.exchange_factory_registry')
         ->alias(QueueFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry')
         ->alias(ConnectionFactoryRegistryInterface::class, 'fivelab.amqp.connection_factory_registry')

@@ -14,6 +14,11 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\Connection\Registry\ConnectionFactoryRegistryInterface;
+use FiveLab\Component\Amqp\Command\InitializeExchangesCommand;
+use FiveLab\Component\Amqp\Command\InitializeQueuesCommand;
+use FiveLab\Component\Amqp\Command\ListConsumersCommand;
+use FiveLab\Component\Amqp\Command\RunConsumerCommand;
+use FiveLab\Component\Amqp\Consumer\Checker\RunConsumerCheckerRegistryInterface;
 use FiveLab\Component\Amqp\Consumer\Registry\ConsumerRegistryInterface;
 use FiveLab\Component\Amqp\Exchange\Registry\ExchangeFactoryRegistryInterface;
 use FiveLab\Component\Amqp\Publisher\Registry\PublisherRegistryInterface;
@@ -30,6 +35,47 @@ class AmqpExtensionTest extends AmqpExtensionTestCase
         $this->load([]);
 
         $this->addToAssertionCount(1);
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureCommands(): void
+    {
+        $this->load([]);
+
+        $this->assertService(
+            'fivelab.amqp.console_command.run_consumer',
+            RunConsumerCommand::class,
+            [
+                new Reference('fivelab.amqp.consumer_registry'),
+                new Reference('fivelab.amqp.consumer_checker_registry'),
+            ]
+        );
+
+        $this->assertService(
+            'fivelab.amqp.console_command.initialize_exchanges',
+            InitializeExchangesCommand::class,
+            [
+                new Reference('fivelab.amqp.exchange_factory_registry'),
+                [],
+            ]
+        );
+
+        $this->assertService(
+            'fivelab.amqp.console_command.initialize_queues',
+            InitializeQueuesCommand::class,
+            [
+                new Reference('fivelab.amqp.queue_factory_registry'),
+                [],
+            ]
+        );
+
+        $this->assertService(
+            'fivelab.amqp.console_command.list_consumers',
+            ListConsumersCommand::class,
+            [
+                [],
+            ]
+        );
     }
 
     #[Test]
@@ -106,6 +152,7 @@ class AmqpExtensionTest extends AmqpExtensionTestCase
 
     #[Test]
     #[TestWith(['fivelab.amqp.consumer_registry'])]
+    #[TestWith(['fivelab.amqp.consumer_checker_registry'])]
     #[TestWith(['fivelab.amqp.exchange_factory_registry'])]
     #[TestWith(['fivelab.amqp.queue_factory_registry'])]
     #[TestWith(['fivelab.amqp.connection_factory_registry'])]
@@ -124,6 +171,7 @@ class AmqpExtensionTest extends AmqpExtensionTestCase
 
     #[Test]
     #[TestWith([ConsumerRegistryInterface::class, 'fivelab.amqp.consumer_registry'])]
+    #[TestWith([RunConsumerCheckerRegistryInterface::class, 'fivelab.amqp.consumer_checker_registry'])]
     #[TestWith([ExchangeFactoryRegistryInterface::class, 'fivelab.amqp.exchange_factory_registry'])]
     #[TestWith([QueueFactoryRegistryInterface::class, 'fivelab.amqp.queue_factory_registry'])]
     #[TestWith([ConnectionFactoryRegistryInterface::class, 'fivelab.amqp.connection_factory_registry'])]
