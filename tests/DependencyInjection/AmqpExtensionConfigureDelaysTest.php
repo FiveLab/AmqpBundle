@@ -13,8 +13,12 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
+use FiveLab\Component\Amqp\Consumer\Checker\ContainerRunConsumerCheckerRegistry;
+use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\DependencyInjection\Argument\ServiceClosureArgument;
 use Symfony\Component\DependencyInjection\Reference;
+use Symfony\Component\DependencyInjection\ServiceLocator;
 
 class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
 {
@@ -26,7 +30,7 @@ class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
         return [
             'connections' => [
                 'connection' => [
-                    'dsn'     => 'amqp://localhost',
+                    'dsn' => 'amqp://localhost',
                 ],
             ],
 
@@ -171,5 +175,66 @@ class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
         self::assertEquals([
             new Reference('fivelab.amqp.delay.message_handler.5second'),
         ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.delay_expired.message_handler')->getArguments()));
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureDelaysWithOtherConsumers(): void
+    {
+        $this->load([
+            'queues' => [
+                'foo' => [
+                    'connection' => 'connection',
+                ],
+            ],
+
+            'consumers' => [
+                'foo' => [
+                    'queue'            => 'foo',
+                    'message_handlers' => 'handler.foo',
+                    'checker'          => 'foo.checker',
+                ],
+            ],
+
+            'delay' => [
+                'connection'    => 'connection',
+                'exchange'      => 'delay',
+                'expired_queue' => 'delay.expired',
+                'consumer_key'  => 'delay_expired',
+                'delays'        => [
+                    '5second' => [
+                        'ttl'     => 5000,
+                        'queue'   => 'delay.5second',
+                        'routing' => '5sec',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertService('fivelab.amqp.consumer_registry', ContainerConsumerRegistry::class);
+        $consumerRegistryLocatorId = (string) $this->container->getDefinition('fivelab.amqp.consumer_registry')->getArgument(0);
+
+        $this->assertService(
+            $consumerRegistryLocatorId,
+            ServiceLocator::class,
+            [
+                [
+                    'foo'           => new ServiceClosureArgument(new Reference('fivelab.amqp.consumer.foo')),
+                    'delay_expired' => new ServiceClosureArgument(new Reference('fivelab.amqp.consumer.delay_expired')),
+                ],
+            ]
+        );
+
+        $this->assertService('fivelab.amqp.consumer_checker_registry', ContainerRunConsumerCheckerRegistry::class);
+        $checkerRegistryLocatorId = (string) $this->container->getDefinition('fivelab.amqp.consumer_checker_registry')->getArgument(0);
+
+        $this->assertService(
+            $checkerRegistryLocatorId,
+            ServiceLocator::class,
+            [
+                [
+                    'foo' => new ServiceClosureArgument(new Reference('foo.checker')),
+                ],
+            ]
+        );
     }
 }

@@ -117,6 +117,13 @@ class AmqpExtension extends Extension
     private array $consumers = [];
 
     /**
+     * The list of available consumer checkers
+     *
+     * @var array
+     */
+    private array $consumerCheckers = [];
+
+    /**
      * The list of available publishers
      *
      * @var array
@@ -611,8 +618,6 @@ class AmqpExtension extends Extension
         $consumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_registry');
         $checkConsumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_checker_registry');
 
-        $consumerCheckers = [];
-
         foreach ($consumers as $key => $consumer) {
             if (!\array_key_exists($consumer['queue'], $this->queueFactories)) {
                 throw new \InvalidArgumentException(\sprintf(
@@ -624,7 +629,7 @@ class AmqpExtension extends Extension
 
             // Add checker to registry, if configured
             if ($consumer['checker']) {
-                $consumerCheckers[$key] = new Reference($consumer['checker']);
+                $this->consumerCheckers[$key] = new Reference($consumer['checker']);
             }
 
             if ($consumer['channel']) {
@@ -774,7 +779,7 @@ class AmqpExtension extends Extension
         $consumersLocatorRef = ServiceLocatorTagPass::register($container, $this->consumers);
         $consumerRegistryDef->replaceArgument(0, $consumersLocatorRef);
 
-        $checkersLocatorRef = ServiceLocatorTagPass::register($container, $consumerCheckers);
+        $checkersLocatorRef = ServiceLocatorTagPass::register($container, $this->consumerCheckers);
         $checkConsumerRegistryDef->replaceArgument(0, $checkersLocatorRef);
 
         $container->setParameter('fivelab.amqp.consumers', \array_keys($this->consumers));
