@@ -12,8 +12,6 @@ AMQP Bundle
 
 Integrate the [AMQP](https://github.com/FiveLab/Amqp) library with you Symfony application.
 
-> Note: bundle now support only php_extension driver (amqp extension).
-
 Sample configuration
 --------------------
 
@@ -21,7 +19,7 @@ Sample configuration
 fivelab_amqp:
     connections:
         default:
-            dsn: 'amqp://guest:guest@127.0.0.1:15672/%2f?read_timeout=30&other_parameter=some'
+            dsn: 'amqp://guest:guest@127.0.0.1:5672/%2f?read_timeout=30&other_parameter=some'
 
     exchanges:
         primary:
