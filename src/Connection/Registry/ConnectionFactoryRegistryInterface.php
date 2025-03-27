@@ -16,9 +16,6 @@ namespace FiveLab\Bundle\AmqpBundle\Connection\Registry;
 use FiveLab\Bundle\AmqpBundle\Exception\ConnectionFactoryNotFoundException;
 use FiveLab\Component\Amqp\Connection\ConnectionFactoryInterface;
 
-/**
- * All connection factories should implement this interface.
- */
 interface ConnectionFactoryRegistryInterface
 {
     /**

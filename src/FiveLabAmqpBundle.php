@@ -17,14 +17,8 @@ use FiveLab\Bundle\AmqpBundle\Connection\Registry\ConnectionFactoryRegistryInter
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-/**
- * The bundle for integrate the AMQP library with you Symfony application.
- */
 class FiveLabAmqpBundle extends Bundle
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getContainerExtension(): AmqpExtension
     {
         if (!$this->extension) {
@@ -34,9 +28,6 @@ class FiveLabAmqpBundle extends Bundle
         return $this->extension;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function shutdown(): void
     {
         /** @var ConnectionFactoryRegistryInterface $connectionFactoryRegistry */

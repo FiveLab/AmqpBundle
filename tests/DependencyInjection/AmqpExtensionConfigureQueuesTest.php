@@ -33,9 +33,6 @@ use Symfony\Component\ExpressionLanguage\Expression;
 
 class AmqpExtensionConfigureQueuesTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function getMinimalConfiguration(): array
     {
         return [

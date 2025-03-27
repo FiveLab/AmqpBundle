@@ -8,6 +8,8 @@ use FiveLab\Component\Amqp\Consumer\Middleware\ConsumerMiddlewares;
 use FiveLab\Component\Amqp\Consumer\SingleConsumer;
 use FiveLab\Component\Amqp\Consumer\Spool\SpoolConsumer;
 use FiveLab\Component\Amqp\Consumer\Spool\SpoolConsumerConfiguration;
+use FiveLab\Component\Amqp\Consumer\Strategy\DefaultConsumeStrategy;
+use FiveLab\Component\Amqp\Consumer\Strategy\LoopConsumeStrategy;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\abstract_arg;
 
@@ -28,7 +30,8 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('queue factory'),
                 abstract_arg('message handler'),
                 abstract_arg('middleware'),
-                abstract_arg('configuration')
+                abstract_arg('configuration'),
+                abstract_arg('strategy')
             ])
 
         // Spool consumer
@@ -48,7 +51,8 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('queue factory'),
                 abstract_arg('message handler'),
                 abstract_arg('middleware'),
-                abstract_arg('configuration')
+                abstract_arg('configuration'),
+                abstract_arg('strategy')
             ])
 
         // Loop consumer
@@ -67,7 +71,8 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('queue factory'),
                 abstract_arg('message handler'),
                 abstract_arg('middleware'),
-                abstract_arg('configuration')
+                abstract_arg('configuration'),
+                abstract_arg('strategy')
             ])
 
         // Common services
@@ -75,5 +80,16 @@ return static function (ContainerConfigurator $container) {
             ->abstract()
 
         ->set('fivelab.amqp.consumer.middlewares.abstract', ConsumerMiddlewares::class)
-            ->abstract();
+            ->abstract()
+
+        // Strategies
+        ->set('fivelab.amqp.consumer.strategy.default.abstract', DefaultConsumeStrategy::class)
+            ->abstract()
+
+        ->set('fivelab.amqp.consumer.strategy.loop.abstract', LoopConsumeStrategy::class)
+            ->abstract()
+            ->args([
+                abstract_arg('idle timeout'),
+                abstract_arg('tick handler'),
+            ]);
 };

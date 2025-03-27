@@ -43,108 +43,28 @@ use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\ExpressionLanguage\Expression;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 
-/**
- * The extension for configure the AMQP library with you application.
- */
 class AmqpExtension extends Extension
 {
-    /**
-     * @var array<string>
-     */
     private array $driverFactories = [];
-
-    /**
-     * The list of available connections.
-     *
-     * @var array
-     */
     private array $connectionFactories = [];
-
-    /**
-     * The list of available default channels (for each connection).
-     *
-     * @var array
-     */
     private array $defaultChannelFactories = [];
-
-    /**
-     * The list of specific channel factories.
-     *
-     * @var array
-     */
     private array $channelFactories = [];
-
-    /**
-     * The list key pair with channel name and connection name.
-     *
-     * @var array
-     */
     private array $channelConnections = [];
-
-    /**
-     * The list of available exchange factories
-     *
-     * @var array
-     */
     private array $exchangeFactories = [];
-
-    /**
-     * List list key pair with exchange name and connection name
-     *
-     * @var array
-     */
     private array $exchangeConnections = [];
-
-    /**
-     * The list of available queue factories
-     *
-     * @var array
-     */
     private array $queueFactories = [];
-
-    /**
-     * The list key pair with queue name and connection name
-     *
-     * @var array
-     */
     private array $queueConnections = [];
-
-    /**
-     * The list of available consumers
-     *
-     * @var array
-     */
     private array $consumers = [];
-
-    /**
-     * The list of available consumer checkers
-     *
-     * @var array
-     */
     private array $consumerCheckers = [];
-
-    /**
-     * The list of available publishers
-     *
-     * @var array
-     */
     private array $publishers = [];
-
-    /**
-     * The list of available savepoint publishers
-     *
-     * @var array
-     */
     private array $savepointPublishers = [];
 
-    /**
-     * {@inheritdoc}
-     */
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
 
         $config = $this->processConfiguration($configuration, $configs);
+        $config = $this->setDefaultStrategy($config);
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
 
@@ -158,7 +78,7 @@ class AmqpExtension extends Extension
         $this->configureExchanges($container, $config['exchanges']);
         $this->configureQueues($container, $config['queues'], $config['queue_default_arguments'] ?? []);
         $this->configurePublishers($container, $config['publishers'], $config['publisher_middleware']);
-        $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware'], $config['consumer_event_handlers']);
+        $this->configureConsumers($container, $config['consumers'], $config['consumer_middleware'], $config['consumer_event_handlers'], $config['consumer_defaults']);
 
         if ($this->isConfigEnabled($container, $config['round_robin'])) {
             $loader->load('round-robin.php');
@@ -175,7 +95,8 @@ class AmqpExtension extends Extension
                 $config['publisher_middleware'],
                 $config['consumer_middleware'],
                 $config['consumer_event_handlers'],
-                $config['queue_default_arguments'] ?? []
+                $config['queue_default_arguments'] ?? [],
+                $config['consumer_defaults'] ?? []
             );
         }
 
@@ -189,20 +110,28 @@ class AmqpExtension extends Extension
             ->replaceArgument(0, \array_keys($this->consumers));
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function getAlias(): string
     {
         return 'fivelab_amqp';
     }
 
-    /**
-     * Configure connections. For each connection we create a default channel use in exchanges and queues.
-     *
-     * @param ContainerBuilder $container
-     * @param array            $connections
-     */
+    private function setDefaultStrategy(array $config): array
+    {
+        $strategy = $config['consumer_defaults']['strategy'];
+
+        foreach ($config['consumers'] as $key => $consumer) {
+            if (!$consumer['strategy']) {
+                $config['consumers'][$key]['strategy'] = $strategy;
+            }
+        }
+
+        if ($config['delay'] ?? null && !$config['delay']['strategy']) {
+            $config['delay']['strategy'] = $strategy;
+        }
+
+        return $config;
+    }
+
     private function configureConnections(ContainerBuilder $container, array $connections): void
     {
         $registryDef = $container->getDefinition('fivelab.amqp.connection_factory_registry');
@@ -259,12 +188,6 @@ class AmqpExtension extends Extension
         $container->setParameter('fivelab.amqp.connection_factories', \array_keys($this->connectionFactories));
     }
 
-    /**
-     * Configure channels
-     *
-     * @param ContainerBuilder $container
-     * @param array            $channels
-     */
     private function configureChannels(ContainerBuilder $container, array $channels): void
     {
         foreach ($channels as $key => $channel) {
@@ -300,12 +223,6 @@ class AmqpExtension extends Extension
         }
     }
 
-    /**
-     * Configure exchanges
-     *
-     * @param ContainerBuilder $container
-     * @param array            $exchanges
-     */
     private function configureExchanges(ContainerBuilder $container, array $exchanges): void
     {
         $registryDef = $container->getDefinition('fivelab.amqp.exchange_factory_registry');
@@ -442,13 +359,6 @@ class AmqpExtension extends Extension
         $container->setParameter('fivelab.amqp.exchange_factories', \array_keys($this->exchangeFactories));
     }
 
-    /**
-     * Configure queues
-     *
-     * @param ContainerBuilder     $container
-     * @param array<string, mixed> $queues
-     * @param array<string, mixed> $queueDefaultArguments
-     */
     private function configureQueues(ContainerBuilder $container, array $queues, array $queueDefaultArguments): void
     {
         $queueRegistry = $container->getDefinition('fivelab.amqp.queue_factory_registry');
@@ -605,15 +515,7 @@ class AmqpExtension extends Extension
         $container->setParameter('fivelab.amqp.queue_factories', \array_keys($this->queueFactories));
     }
 
-    /**
-     * Configure consumers
-     *
-     * @param ContainerBuilder     $container
-     * @param array<string, mixed> $consumers
-     * @param array<string>        $globalMiddlewares
-     * @param array<string>        $eventHandlers
-     */
-    private function configureConsumers(ContainerBuilder $container, array $consumers, array $globalMiddlewares, array $eventHandlers): void
+    private function configureConsumers(ContainerBuilder $container, array $consumers, array $globalMiddlewares, array $eventHandlers, array $defaults): void
     {
         $consumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_registry');
         $checkConsumerRegistryDef = $container->getDefinition('fivelab.amqp.consumer_checker_registry');
@@ -695,6 +597,26 @@ class AmqpExtension extends Extension
 
             $container->setDefinition($messageHandlersServiceId, $messageHandlersServiceDef);
 
+            // Configure strategy
+            $strategyServiceId = \sprintf('fivelab.amqp.consumer.%s.strategy', $key);
+
+            if ('consume' === $consumer['strategy']) {
+                $strategyServiceDef = new ChildDefinition('fivelab.amqp.consumer.strategy.default.abstract');
+            } elseif ('loop' === $consumer['strategy']) {
+                $tickHandler = $consumer['tick_handler'] ?? $defaults['tick_handler'];
+
+                $strategyServiceDef = (new ChildDefinition('fivelab.amqp.consumer.strategy.loop.abstract'))
+                    ->replaceArgument(0, $consumer['options']['idle_timeout'])
+                    ->replaceArgument(1, $tickHandler ? new Reference($tickHandler) : null);
+            } else {
+                throw new \RuntimeException(\sprintf(
+                    'Unknown consume strategy "%s".',
+                    $consumer['strategy']
+                ));
+            }
+
+            $container->setDefinition($strategyServiceId, $strategyServiceDef);
+
             // Configure consumer
             $consumerServiceId = \sprintf('fivelab.amqp.consumer.%s', $key);
             $tagNameGenerator = null;
@@ -719,7 +641,8 @@ class AmqpExtension extends Extension
                     ->replaceArgument(0, new Reference($queueFactoryServiceId))
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
-                    ->replaceArgument(3, new Reference($consumerConfigurationServiceId));
+                    ->replaceArgument(3, new Reference($consumerConfigurationServiceId))
+                    ->replaceArgument(4, new Reference($strategyServiceId));
             } elseif ('spool' === $consumer['mode']) {
                 // Configure spool consumer
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
@@ -738,7 +661,8 @@ class AmqpExtension extends Extension
                     ->replaceArgument(0, new Reference($queueFactoryServiceId))
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
-                    ->replaceArgument(3, new Reference($consumerConfigurationServiceId));
+                    ->replaceArgument(3, new Reference($consumerConfigurationServiceId))
+                    ->replaceArgument(4, new Reference($strategyServiceId));
             } elseif ('loop' === $consumer['mode']) {
                 $consumerConfigurationServiceId = \sprintf('fivelab.amqp.consumer.%s.configuration', $key);
                 $consumerConfigurationServiceDef = new ChildDefinition('fivelab.amqp.consumer_loop.configuration.abstract');
@@ -755,7 +679,8 @@ class AmqpExtension extends Extension
                     ->replaceArgument(0, new Reference($queueFactoryServiceId))
                     ->replaceArgument(1, new Reference($messageHandlersServiceId))
                     ->replaceArgument(2, new Reference($middlewareServiceId))
-                    ->replaceArgument(3, new Reference($consumerConfigurationServiceId));
+                    ->replaceArgument(3, new Reference($consumerConfigurationServiceId))
+                    ->replaceArgument(4, new Reference($strategyServiceId));
             } else {
                 throw new \InvalidArgumentException(\sprintf(
                     'Unknown mode "%s".',
@@ -785,13 +710,6 @@ class AmqpExtension extends Extension
         $container->setParameter('fivelab.amqp.consumers', \array_keys($this->consumers));
     }
 
-    /**
-     * Configure publishers
-     *
-     * @param ContainerBuilder $container
-     * @param array            $publishers
-     * @param array            $globalMiddlewares
-     */
     private function configurePublishers(ContainerBuilder $container, array $publishers, array $globalMiddlewares): void
     {
         $publishersRegistryDef = $container->getDefinition('fivelab.amqp.publisher_registry');
@@ -899,12 +817,6 @@ class AmqpExtension extends Extension
         $container->setParameter('fivelab.amqp.savepoint_publishers', \array_keys($this->savepointPublishers));
     }
 
-    /**
-     * Configure round robin
-     *
-     * @param ContainerBuilder $container
-     * @param array            $config
-     */
     private function configureRoundRobin(ContainerBuilder $container, array $config): void
     {
         $container->getDefinition('fivelab.amqp.round_robin_consumer.configuration')
@@ -916,17 +828,7 @@ class AmqpExtension extends Extension
             ->replaceArgument(2, \array_keys($this->consumers));
     }
 
-    /**
-     * Configure delay system
-     *
-     * @param ContainerBuilder     $container
-     * @param array<string, mixed> $config
-     * @param array<string>        $globalPublisherMiddlewares
-     * @param array<string>        $globalConsumerMiddlewares
-     * @param array<string>        $consumerEventHandlers
-     * @param array<string, mixed> $queueDefaultArguments
-     */
-    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares, array $consumerEventHandlers, array $queueDefaultArguments): void
+    private function configureDelay(ContainerBuilder $container, array $config, array $globalPublisherMiddlewares, array $globalConsumerMiddlewares, array $consumerEventHandlers, array $queueDefaultArguments, array $consumerDefaults): void
     {
         // Configure exchange
         $this->configureExchanges($container, [
@@ -1032,6 +934,7 @@ class AmqpExtension extends Extension
             $config['consumer_key'] => [
                 'queue'            => $config['expired_queue'],
                 'mode'             => 'loop',
+                'strategy'         => $config['strategy'],
                 'channel'          => '',
                 'message_handlers' => $messageHandlerServiceIds,
                 'checker'          => '',
@@ -1043,19 +946,9 @@ class AmqpExtension extends Extension
                     'prefetch_count'   => 3,
                 ],
             ],
-        ], $globalConsumerMiddlewares, $consumerEventHandlers);
+        ], $globalConsumerMiddlewares, $consumerEventHandlers, $consumerDefaults);
     }
 
-    /**
-     * Create argument definition
-     *
-     * @param ContainerBuilder $container
-     * @param string           $serviceId
-     * @param string           $class
-     * @param mixed            ...$values
-     *
-     * @return Reference
-     */
     private function createArgumentDefinition(ContainerBuilder $container, string $serviceId, string $class, mixed ...$values): Reference
     {
         $definition = new Definition($class);
@@ -1066,16 +959,6 @@ class AmqpExtension extends Extension
         return new Reference($serviceId);
     }
 
-    /**
-     * Create argument definition
-     *
-     * @param ContainerBuilder $container
-     * @param string           $serviceId
-     * @param string           $name
-     * @param mixed            $value
-     *
-     * @return Reference
-     */
     private function createCustomArgumentDefinition(ContainerBuilder $container, string $serviceId, string $name, mixed $value): Reference
     {
         $definition = new ChildDefinition('fivelab.amqp.definition.argument.abstract');
@@ -1087,15 +970,6 @@ class AmqpExtension extends Extension
         return new Reference($serviceId);
     }
 
-    /**
-     * Create argument definitions
-     *
-     * @param ContainerBuilder $container
-     * @param string           $serviceIdPrefix
-     * @param array            $arguments
-     *
-     * @return array|Reference[]
-     */
     private function createCustomArgumentDefinitions(ContainerBuilder $container, string $serviceIdPrefix, array $arguments): array
     {
         $references = [];
@@ -1109,13 +983,6 @@ class AmqpExtension extends Extension
         return $references;
     }
 
-    /**
-     * Resolve bool or expression object
-     *
-     * @param mixed $value
-     *
-     * @return Expression|bool
-     */
     private static function resolveBoolOrExpression(mixed $value): Expression|bool
     {
         if (\is_string($value) && \str_starts_with($value, '@=')) {

@@ -21,9 +21,6 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function getMinimalConfiguration(): array
     {
         return [
@@ -91,6 +88,7 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo.middlewares');
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo.message_handler');
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo.configuration');
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer.foo.strategy');
 
         $definition = $this->container->findDefinition('fivelab.amqp.consumer.foo.configuration');
         $definitionAbstract = $this->container->findDefinition('fivelab.amqp.consumer_single.configuration.abstract');
@@ -213,6 +211,66 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.middlewares', 0, new Reference('middleware1'));
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.middlewares', 1, new Reference('middleware2'));
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.middlewares', 2, new Reference('middleware3'));
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureSingleConsumerWithLoopStrategyAndDefaults(): void
+    {
+        $this->load([
+            'consumers' => [
+                'foo' => [
+                    'message_handlers' => 'handler',
+                    'queue'            => 'default',
+                    'strategy'         => 'loop',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithParent('fivelab.amqp.consumer.foo.strategy', 'fivelab.amqp.consumer.strategy.loop.abstract');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 0, 100000);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 1, null);
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureSingleConsumerWithLoopStrategyAndParameters(): void
+    {
+        $this->load([
+            'consumers' => [
+                'foo' => [
+                    'message_handlers' => 'handler',
+                    'queue'            => 'default',
+                    'strategy'         => 'loop',
+                    'tick_handler'     => 'tick_handler_service',
+                    'options'          => [
+                        'idle_timeout' => 1000000,
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithParent('fivelab.amqp.consumer.foo.strategy', 'fivelab.amqp.consumer.strategy.loop.abstract');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 0, 1000000);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 1, new Reference('tick_handler_service'));
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureConsumerWithLoopStrategyDeclaredInDefaults(): void
+    {
+        $this->load([
+            'consumer_defaults' => [
+                'strategy' => 'loop',
+            ],
+            'consumers'         => [
+                'foo' => [
+                    'message_handlers' => 'handler',
+                    'queue'            => 'default',
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithParent('fivelab.amqp.consumer.foo.strategy', 'fivelab.amqp.consumer.strategy.loop.abstract');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 0, 100000);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 1, null);
     }
 
     #[Test]

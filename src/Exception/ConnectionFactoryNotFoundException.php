@@ -13,9 +13,6 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Exception;
 
-/**
- * Throw this exception if the connection factory was not found.
- */
 class ConnectionFactoryNotFoundException extends \Exception
 {
 }

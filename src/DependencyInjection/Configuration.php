@@ -15,17 +15,12 @@ namespace FiveLab\Bundle\AmqpBundle\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\NodeDefinition;
+use Symfony\Component\Config\Definition\Builder\ScalarNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
-/**
- * The configuration definition for AMQP library.
- */
-class Configuration implements ConfigurationInterface
+readonly class Configuration implements ConfigurationInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('fivelab_amqp');
@@ -41,6 +36,7 @@ class Configuration implements ConfigurationInterface
                 ->append($this->getQueuesNodeDefinition())
                 ->append($this->getQueueArgumentsNodeDefinition('queue_default_arguments'))
                 ->append($this->getConsumersNodeDefinition())
+                ->append($this->getConsumerDefaults())
                 ->append($this->getConsumerEventHandlersNodeDefinition())
                 ->append($this->getPublishersNodeDefinition())
                 ->append($this->getMiddlewareNodeDefinition('consumer_'))
@@ -50,11 +46,6 @@ class Configuration implements ConfigurationInterface
         return $treeBuilder;
     }
 
-    /**
-     * Create delay definition
-     *
-     * @return NodeDefinition
-     */
     private function getDelayDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('delay');
@@ -80,6 +71,8 @@ class Configuration implements ConfigurationInterface
                     ->isRequired()
                     ->info('The name of connection.')
                 ->end()
+
+                ->append($this->getStrategyNodeDefinition())
 
                 ->arrayNode('delays')
                     ->requiresAtLeastOneElement()
@@ -138,11 +131,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Create round robin definition
-     *
-     * @return NodeDefinition
-     */
     private function getRoundRobinDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('round_robin');
@@ -169,11 +157,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get queues node definition
-     *
-     * @return NodeDefinition
-     */
     private function getQueuesNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('queues');
@@ -244,13 +227,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get arguments node for declare queue
-     *
-     * @param string $name
-     *
-     * @return ArrayNodeDefinition
-     */
     private function getQueueArgumentsNodeDefinition(string $name = 'arguments'): ArrayNodeDefinition
     {
         $node = new ArrayNodeDefinition($name);
@@ -333,11 +309,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get publishers node definition
-     *
-     * @return NodeDefinition
-     */
     private function getPublishersNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('publishers');
@@ -372,11 +343,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get consumers node definition
-     *
-     * @return NodeDefinition
-     */
     private function getConsumersNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('consumers');
@@ -407,6 +373,13 @@ class Configuration implements ConfigurationInterface
                         ->ifNotInArray(['single', 'spool', 'loop'])
                         ->thenInvalid('The mode %s is not valid. Available modes: "single", "spool" and "loop".')
                     ->end()
+                ->end()
+
+                ->append($this->getStrategyNodeDefinition())
+
+                ->scalarNode('tick_handler')
+                    ->defaultNull()
+                    ->info('The service id of tick handler (support only for "loop" strategy).')
                 ->end()
 
                 ->scalarNode('tag_generator')
@@ -458,6 +431,11 @@ class Configuration implements ConfigurationInterface
                             ->info('The prefetch count or the count messages for flush (use for spool consumers).')
                             ->defaultValue(3)
                         ->end()
+
+                        ->integerNode('idle_timeout')
+                            ->info('The idle timeout (microseconds) for loop strategy')
+                            ->defaultValue(100000)
+                        ->end()
                     ->end()
                 ->end()
             ->end();
@@ -465,11 +443,24 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get exchanges node definition
-     *
-     * @return NodeDefinition
-     */
+    private function getConsumerDefaults(): NodeDefinition
+    {
+        $node = new ArrayNodeDefinition('consumer_defaults');
+
+        $node
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->append($this->getStrategyNodeDefinition('consume'))
+
+                ->scalarNode('tick_handler')
+                    ->defaultNull()
+                    ->info('The service id of tick handler (used for all consumers when not configured).')
+                ->end()
+            ->end();
+
+        return $node;
+    }
+
     private function getExchangesNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('exchanges');
@@ -570,11 +561,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get channels node definition
-     *
-     * @return NodeDefinition
-     */
     private function getChannelsNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('channels');
@@ -597,11 +583,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get connections node definition
-     *
-     * @return NodeDefinition
-     */
     private function getConnectionsNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('connections');
@@ -635,13 +616,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get bindings node definition
-     *
-     * @param string $nodeName
-     *
-     * @return NodeDefinition
-     */
     private function getBindingsNodeDefinition(string $nodeName): NodeDefinition
     {
         $node = new ArrayNodeDefinition($nodeName);
@@ -676,13 +650,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get middleware node
-     *
-     * @param string $nodePrefix
-     *
-     * @return NodeDefinition
-     */
     private function getMiddlewareNodeDefinition(string $nodePrefix = ''): NodeDefinition
     {
         $node = new ArrayNodeDefinition($nodePrefix.'middleware');
@@ -695,11 +662,6 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Get consumer event handlers node
-     *
-     * @return NodeDefinition
-     */
     private function getConsumerEventHandlersNodeDefinition(): NodeDefinition
     {
         $node = new ArrayNodeDefinition('consumer_event_handlers');
@@ -712,11 +674,17 @@ class Configuration implements ConfigurationInterface
         return $node;
     }
 
-    /**
-     * Is bool or expression?
-     *
-     * @return \Closure
-     */
+    private function getStrategyNodeDefinition(?string $defaultValue = null): NodeDefinition
+    {
+        return (new ScalarNodeDefinition('strategy'))
+            ->defaultValue($defaultValue)
+            ->info('The strategy for consume.')
+            ->validate()
+                ->ifNotInArray(['consume', 'loop'])
+                ->thenInvalid('The strategy %s is not valid. Available strategies: "consume" and "loop".')
+            ->end();
+    }
+
     private static function isBoolOrExpressionClosure(): \Closure
     {
         return static function ($value) {

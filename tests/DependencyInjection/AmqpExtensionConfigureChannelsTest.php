@@ -19,9 +19,6 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionConfigureChannelsTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function getMinimalConfiguration(): array
     {
         return [

@@ -21,9 +21,6 @@ use Symfony\Component\ExpressionLanguage\Expression;
 
 class AmqpExtensionConfigureExchangesTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function getMinimalConfiguration(): array
     {
         return [

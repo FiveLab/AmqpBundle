@@ -18,9 +18,6 @@ use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionConfigurePublishersTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function getMinimalConfiguration(): array
     {
         return [

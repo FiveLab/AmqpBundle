@@ -18,9 +18,6 @@ use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 
 abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -28,20 +25,11 @@ abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
         $this->container->setParameter('kernel.debug', false);
     }
 
-    /**
-     * {@inheritdoc}
-     */
     protected function getContainerExtensions(): array
     {
         return [new AmqpExtension()];
     }
 
-    /**
-     * Assert parameter
-     *
-     * @param string $parameter
-     * @param mixed  $value
-     */
     protected function assertParameter(string $parameter, mixed $value): void
     {
         self::assertTrue($this->container->hasParameter($parameter), \sprintf('Missed parameter "%s" in container.', $parameter));
@@ -49,16 +37,7 @@ abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
         self::assertEquals($value, $this->container->getParameter($parameter), \sprintf('Invalid parameter "%s" in container.', $parameter));
     }
 
-    /**
-     * Assert service in container
-     *
-     * @param string      $id
-     * @param string|null $class
-     * @param array|null  $arguments
-     * @param array|null  $factory
-     * @param array|null  $calls
-     */
-    protected function assertService(string $id, string $class = null, array $arguments = null, array $factory = null, array $calls = null): void
+    protected function assertService(string $id, ?string $class = null, ?array $arguments = null, ?array $factory = null, ?array $calls = null): void
     {
         self::assertTrue($this->container->hasDefinition($id), \sprintf('Missed definition "%s" in container.', $id));
 

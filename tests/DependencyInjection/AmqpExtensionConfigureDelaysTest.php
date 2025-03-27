@@ -22,9 +22,6 @@ use Symfony\Component\DependencyInjection\ServiceLocator;
 
 class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
 {
-    /**
-     * {@inheritdoc}
-     */
     protected function getMinimalConfiguration(): array
     {
         return [
@@ -170,6 +167,7 @@ class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
             new Reference('fivelab.amqp.consumer.delay_expired.message_handler'),
             new Reference('fivelab.amqp.consumer.delay_expired.middlewares'),
             new Reference('fivelab.amqp.consumer.delay_expired.configuration'),
+            new Reference('fivelab.amqp.consumer.delay_expired.strategy'),
         ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.delay_expired')->getArguments()));
 
         self::assertEquals([

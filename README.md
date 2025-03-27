@@ -148,7 +148,7 @@ Before create the PR or merge into develop, please run next commands for validat
 ./bin/phpunit
 
 ./bin/phpcs --config-set show_warnings 0
-./bin/phpcs --standard=vendor/escapestudios/symfony2-coding-standard/Symfony/ src/
+./bin/phpcs --standard=src/phpcs-ruleset.xml src/
 ./bin/phpcs --standard=tests/phpcs-ruleset.xml tests/
 
 ```

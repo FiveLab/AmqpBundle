@@ -20,18 +20,18 @@
 
     "require": {
         "php": "^8.2",
-        "fivelab/amqp": "~2.1.0",
-        "symfony/dependency-injection": "~5.4 | ~6.0 | ~7.0",
-        "symfony/framework-bundle": "~5.4 | ~6.0 | ~7.0"
+        "fivelab/amqp": "~2.2.0",
+        "symfony/dependency-injection": "~6.4 | ~7.0",
+        "symfony/framework-bundle": "~6.4 | ~7.0"
     },
 
     "require-dev": {
-        "phpunit/phpunit": "~10.1",
-        "phpmetrics/phpmetrics": "^2.0",
+        "phpunit/phpunit": "~11.5",
+        "phpmetrics/phpmetrics": "^3.0@rc",
         "escapestudios/symfony2-coding-standard": "~3.5",
-        "matthiasnoback/symfony-dependency-injection-test": "~4.0",
-        "symfony/console": "~5.4 | ~6.0",
-        "symfony/expression-language": "~5.4 | ~6.0",
+        "matthiasnoback/symfony-dependency-injection-test": "~6.0",
+        "symfony/console": "~6.4 | ~7.0",
+        "symfony/expression-language": "~6.4 | ~7.0",
         "fivelab/ci-rules": "dev-master"
     },
 

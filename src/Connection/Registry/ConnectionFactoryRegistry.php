@@ -16,30 +16,18 @@ namespace FiveLab\Bundle\AmqpBundle\Connection\Registry;
 use FiveLab\Bundle\AmqpBundle\Exception\ConnectionFactoryNotFoundException;
 use FiveLab\Component\Amqp\Connection\ConnectionFactoryInterface;
 
-/**
- * Default connection factory registry.
- */
 class ConnectionFactoryRegistry implements ConnectionFactoryRegistryInterface
 {
     /**
-     * @var array|ConnectionFactoryInterface
+     * @var array<ConnectionFactoryInterface>
      */
     private array $connectionFactories = [];
 
-    /**
-     * Add connection factory to registry
-     *
-     * @param string                     $name
-     * @param ConnectionFactoryInterface $connectionFactory
-     */
     public function add(string $name, ConnectionFactoryInterface $connectionFactory): void
     {
         $this->connectionFactories[$name] = $connectionFactory;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function get(string $name): ConnectionFactoryInterface
     {
         if (\array_key_exists($name, $this->connectionFactories)) {
