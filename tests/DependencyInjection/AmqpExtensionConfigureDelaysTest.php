@@ -235,4 +235,57 @@ class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
             ]
         );
     }
+
+    #[Test]
+    public function shouldSuccessConfigureDelayWithLoopStrategy(): void
+    {
+        $this->load([
+            'delay' => [
+                'connection'    => 'connection',
+                'exchange'      => 'delay',
+                'expired_queue' => 'delay.expired',
+                'strategy'      => 'loop',
+                'consumer_key'  => 'delay_expired',
+                'delays'        => [
+                    '5second' => [
+                        'ttl'     => 5000,
+                        'queue'   => 'delay.5second',
+                        'routing' => '5sec',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer.delay_expired.strategy');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.delay_expired.strategy', 0, 100000);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.delay_expired.strategy', 1, null);
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureDelayWithLoopStrategyDeclaredInDefaults(): void
+    {
+        $this->load([
+            'consumer_defaults' => [
+                'strategy'     => 'loop',
+                'tick_handler' => 'tick_handler_service',
+            ],
+            'delay'             => [
+                'connection'    => 'connection',
+                'exchange'      => 'delay',
+                'expired_queue' => 'delay.expired',
+                'consumer_key'  => 'delay_expired',
+                'delays'        => [
+                    '5second' => [
+                        'ttl'     => 5000,
+                        'queue'   => 'delay.5second',
+                        'routing' => '5sec',
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertContainerBuilderHasService('fivelab.amqp.consumer.delay_expired.strategy');
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.delay_expired.strategy', 0, 100000);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.delay_expired.strategy', 1, new Reference('tick_handler_service'));
+    }
 }

@@ -258,7 +258,8 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
     {
         $this->load([
             'consumer_defaults' => [
-                'strategy' => 'loop',
+                'tick_handler' => 'tick_handler_service',
+                'strategy'     => 'loop',
             ],
             'consumers'         => [
                 'foo' => [
@@ -270,7 +271,7 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
 
         $this->assertContainerBuilderHasServiceDefinitionWithParent('fivelab.amqp.consumer.foo.strategy', 'fivelab.amqp.consumer.strategy.loop.abstract');
         $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 0, 100000);
-        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 1, null);
+        $this->assertContainerBuilderHasServiceDefinitionWithArgument('fivelab.amqp.consumer.foo.strategy', 1, new Reference('tick_handler_service'));
     }
 
     #[Test]

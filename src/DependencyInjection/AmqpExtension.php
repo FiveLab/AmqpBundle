@@ -125,7 +125,7 @@ class AmqpExtension extends Extension
             }
         }
 
-        if ($config['delay'] ?? null && !$config['delay']['strategy']) {
+        if (\array_key_exists('delay', $config) && !$config['delay']['strategy']) {
             $config['delay']['strategy'] = $strategy;
         }
 
@@ -944,6 +944,7 @@ class AmqpExtension extends Extension
                     'read_timeout'     => 300,
                     'requeue_on_error' => true,
                     'prefetch_count'   => 3,
+                    'idle_timeout'     => 100000,
                 ],
             ],
         ], $globalConsumerMiddlewares, $consumerEventHandlers, $consumerDefaults);
