@@ -13,6 +13,7 @@ use Symfony\Contracts\Service\ResetInterface;
 class ReleaseMemoryMiddlewareTest extends TestCase
 {
     private ResetInterface $servicesResetter;
+
     protected function setUp(): void
     {
         $this->servicesResetter = $this->createMock(ResetInterface::class);
