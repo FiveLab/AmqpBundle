@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the FiveLab AmqpBundle package
+ *
+ * (c) FiveLab
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code
+ */
+
 declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Tests\Middleware;
@@ -33,8 +42,8 @@ class ReleaseMemoryMiddlewareTest extends TestCase
             ->expects($this->once())
             ->method('reset')
             ->willReturnCallback(function () use (&$alreadyReset): void {
-            $alreadyReset = true;
-        });;
+                $alreadyReset = true;
+            });
 
         $this->getMiddleware(true)->handle($message, $next);
     }
@@ -54,7 +63,7 @@ class ReleaseMemoryMiddlewareTest extends TestCase
             ->method('reset')
             ->willReturnCallback(function () use (&$alreadyReset): void {
                 $alreadyReset = true;
-            });;
+            });
 
         $this->getMiddleware(false)->handle($message, $next);
     }

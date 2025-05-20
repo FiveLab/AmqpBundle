@@ -123,6 +123,7 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
 
         // Verify registry
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer_registry', ContainerConsumerRegistry::class);
+
         $this->assertContainerBuilderHasServiceDefinitionWithServiceLocatorArgument('fivelab.amqp.consumer_registry', 0, [
             'foo' => 'fivelab.amqp.consumer.foo',
         ]);
@@ -147,6 +148,7 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         ]);
 
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer_checker_registry', ContainerRunConsumerCheckerRegistry::class);
+
         $this->assertContainerBuilderHasServiceDefinitionWithServiceLocatorArgument('fivelab.amqp.consumer_checker_registry', 0, [
             'bla' => 'default_checker',
         ]);
