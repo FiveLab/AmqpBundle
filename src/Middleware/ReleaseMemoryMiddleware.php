@@ -10,10 +10,8 @@ use Symfony\Contracts\Service\ResetInterface;
 
 class ReleaseMemoryMiddleware implements ConsumerMiddlewareInterface
 {
-    public function __construct(
-        private ResetInterface          $servicesResetter,
-        private bool                    $clearBeforeHandle = false
-    ) {
+    public function __construct(private ResetInterface $servicesResetter, private bool $clearBeforeHandle = false)
+    {
     }
 
     public function handle(ReceivedMessage $message, callable $next): void
