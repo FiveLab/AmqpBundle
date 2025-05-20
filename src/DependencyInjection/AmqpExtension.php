@@ -340,6 +340,7 @@ class AmqpExtension extends Extension
             $exchangeFactoryServiceId = \sprintf('fivelab.amqp.exchange_factory.%s', $key);
             $exchangeFactoryServiceDef = new Definition(ExchangeFactoryInterface::class);
             $exchangeFactoryServiceDef->setFactory([new Reference($this->driverFactories[$exchange['connection']]), 'createExchangeFactory']);
+
             $exchangeFactoryServiceDef->setArguments([
                 new Reference($this->defaultChannelFactories[$exchange['connection']]),
                 new Reference($exchangeDefinitionServiceId),
@@ -496,6 +497,7 @@ class AmqpExtension extends Extension
             $queueFactoryServiceId = \sprintf('fivelab.amqp.queue_factory.%s', $key);
             $queueFactoryServiceDef = new Definition(QueueFactoryInterface::class);
             $queueFactoryServiceDef->setFactory([new Reference($this->driverFactories[$queue['connection']]), 'createQueueFactory']);
+
             $queueFactoryServiceDef->setArguments([
                 new Reference($this->defaultChannelFactories[$queue['connection']]),
                 new Reference($queueDefinitionServiceId),
