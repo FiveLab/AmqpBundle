@@ -72,7 +72,6 @@ class AmqpExtension extends Extension
         $loader->load('definitions.php');
         $loader->load('consumers.php');
         $loader->load('publishers.php');
-        $loader->load('listeners.php');
         $loader->load('services.php');
 
         $this->configureListeners($container, $config['listeners']);
@@ -136,15 +135,19 @@ class AmqpExtension extends Extension
     private function configureListeners(ContainerBuilder $container, array $listeners): void
     {
         if (null !== $listeners['release_memory']) {
-            $container->getDefinition(ReleaseMemoryListener::class)
-                ->setAbstract(false)
-                ->replaceArgument(1, $listeners['release_memory']);
+            $def = (new Definition(ReleaseMemoryListener::class))
+                ->setArguments([new Reference('services_resetter'), $listeners['release_memory']])
+                ->addTag('kernel.event_subscriber');
+
+            $container->setDefinition(ReleaseMemoryListener::class, $def);
         }
 
         if (null !== $listeners['ping_dbal_connections']) {
-            $container->getDefinition(PingDbalConnectionsListener::class)
-                ->setAbstract(false)
-                ->replaceArgument(1, $listeners['ping_dbal_connections']);
+            $def = (new Definition(PingDbalConnectionsListener::class))
+                ->setArguments([new Reference('doctrine'), $listeners['ping_dbal_connections']])
+                ->addTag('kernel.event_subscriber');
+
+            $container->setDefinition(PingDbalConnectionsListener::class, $def);
         }
     }
 
