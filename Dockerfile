@@ -12,6 +12,7 @@ RUN \
 RUN \
     apt-get install -y --no-install-recommends \
     yes | pecl install xdebug && \
+    docker-php-ext-install pcntl && \
     docker-php-ext-enable xdebug
 
 # Install composer

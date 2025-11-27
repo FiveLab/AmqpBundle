@@ -26,7 +26,8 @@ return static function (ContainerConfigurator $container) {
         ->set('fivelab.amqp.console_command.run_consumer', RunConsumerCommand::class)
             ->args([
                 service('fivelab.amqp.consumer_registry'),
-                service('fivelab.amqp.consumer_checker_registry')
+                service('fivelab.amqp.consumer_checker_registry'),
+                service('event_dispatcher')
             ])
             ->tag('console.command')
 

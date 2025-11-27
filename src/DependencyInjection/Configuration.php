@@ -28,6 +28,7 @@ readonly class Configuration implements ConfigurationInterface
 
         $rootNode
             ->children()
+                ->append($this->getListenersDefinition())
                 ->append($this->getDelayDefinition())
                 ->append($this->getRoundRobinDefinition())
                 ->append($this->getConnectionsNodeDefinition())
@@ -37,13 +38,40 @@ readonly class Configuration implements ConfigurationInterface
                 ->append($this->getQueueArgumentsNodeDefinition('queue_default_arguments'))
                 ->append($this->getConsumersNodeDefinition())
                 ->append($this->getConsumerDefaults())
-                ->append($this->getConsumerEventHandlersNodeDefinition())
                 ->append($this->getPublishersNodeDefinition())
-                ->append($this->getMiddlewareNodeDefinition('consumer_'))
                 ->append($this->getMiddlewareNodeDefinition('publisher_'))
             ->end();
 
         return $treeBuilder;
+    }
+
+    private function getListenersDefinition(): ArrayNodeDefinition
+    {
+        $node = new ArrayNodeDefinition('listeners');
+
+        $node
+            ->addDefaultsIfNotSet()
+            ->children()
+                ->scalarNode('release_memory')
+                    ->defaultValue(null)
+                    ->info('Enable release memory listener (true - clear before handle, false - after handle, null - disable listener).')
+                    ->validate()
+                        ->ifFalse(static fn (mixed $value) => null === $value || \is_bool($value))
+                        ->thenInvalid('Invalid value for "release_memory". Must be bool or null.')
+                    ->end()
+                ->end()
+
+                ->scalarNode('ping_dbal_connections')
+                    ->defaultValue(null)
+                    ->info('Enable ping DBAL connections listeners (number - seconds for ping interval, null - disable listener)')
+                    ->validate()
+                        ->ifFalse(static fn (mixed $value) => null === $value || \is_int($value) || $value < 1)
+                        ->thenInvalid('Invalid value for "ping_dbal_connections". Must be integer or null.')
+                    ->end()
+                ->end()
+            ->end();
+
+        return $node;
     }
 
     private function getDelayDefinition(): NodeDefinition
@@ -407,8 +435,6 @@ readonly class Configuration implements ConfigurationInterface
                     ->end()
                 ->end()
 
-                ->append($this->getMiddlewareNodeDefinition())
-
                 ->arrayNode('options')
                     ->addDefaultsIfNotSet()
                     ->children()
@@ -653,18 +679,6 @@ readonly class Configuration implements ConfigurationInterface
     private function getMiddlewareNodeDefinition(string $nodePrefix = ''): NodeDefinition
     {
         $node = new ArrayNodeDefinition($nodePrefix.'middleware');
-
-        $node
-            ->defaultValue([])
-            ->prototype('scalar')
-            ->end();
-
-        return $node;
-    }
-
-    private function getConsumerEventHandlersNodeDefinition(): NodeDefinition
-    {
-        $node = new ArrayNodeDefinition('consumer_event_handlers');
 
         $node
             ->defaultValue([])

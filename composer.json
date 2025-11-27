@@ -20,9 +20,9 @@
 
     "require": {
         "php": "^8.2",
-        "fivelab/amqp": "~2.2.0",
-        "symfony/dependency-injection": "~6.4 | ~7.0",
-        "symfony/framework-bundle": "~6.4 | ~7.0"
+        "fivelab/amqp": "dev-master",
+        "symfony/dependency-injection": "~6.4 | ~7.0 | ~8.0",
+        "symfony/framework-bundle": "~6.4 | ~7.0 | ~8.0"
     },
 
     "require-dev": {
@@ -30,8 +30,10 @@
         "phpmetrics/phpmetrics": "^3.0@rc",
         "escapestudios/symfony2-coding-standard": "~3.5",
         "matthiasnoback/symfony-dependency-injection-test": "~6.0",
-        "symfony/console": "~6.4 | ~7.0",
-        "symfony/expression-language": "~6.4 | ~7.0",
+        "symfony/console": "~6.4 | ~7.0 | 8.0",
+        "symfony/expression-language": "~6.4 | ~7.0 | 8.0",
+        "doctrine/persistence": "~4.0",
+        "doctrine/dbal": "~4.0",
         "fivelab/ci-rules": "dev-master"
     },
 

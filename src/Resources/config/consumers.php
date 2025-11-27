@@ -4,7 +4,6 @@ use FiveLab\Component\Amqp\Consumer\ConsumerConfiguration;
 use FiveLab\Component\Amqp\Consumer\Handler\MessageHandlers;
 use FiveLab\Component\Amqp\Consumer\Loop\LoopConsumer;
 use FiveLab\Component\Amqp\Consumer\Loop\LoopConsumerConfiguration;
-use FiveLab\Component\Amqp\Consumer\Middleware\ConsumerMiddlewares;
 use FiveLab\Component\Amqp\Consumer\SingleConsumer;
 use FiveLab\Component\Amqp\Consumer\Spool\SpoolConsumer;
 use FiveLab\Component\Amqp\Consumer\Spool\SpoolConsumerConfiguration;
@@ -29,7 +28,6 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 abstract_arg('queue factory'),
                 abstract_arg('message handler'),
-                abstract_arg('middleware'),
                 abstract_arg('configuration'),
                 abstract_arg('strategy')
             ])
@@ -50,7 +48,6 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 abstract_arg('queue factory'),
                 abstract_arg('message handler'),
-                abstract_arg('middleware'),
                 abstract_arg('configuration'),
                 abstract_arg('strategy')
             ])
@@ -70,16 +67,12 @@ return static function (ContainerConfigurator $container) {
             ->args([
                 abstract_arg('queue factory'),
                 abstract_arg('message handler'),
-                abstract_arg('middleware'),
                 abstract_arg('configuration'),
                 abstract_arg('strategy')
             ])
 
         // Common services
         ->set('fivelab.amqp.consumer.message_handler.abstract', MessageHandlers::class)
-            ->abstract()
-
-        ->set('fivelab.amqp.consumer.middlewares.abstract', ConsumerMiddlewares::class)
             ->abstract()
 
         // Strategies

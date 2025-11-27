@@ -165,7 +165,6 @@ class AmqpExtensionConfigureDelaysTest extends AmqpExtensionTestCase
         self::assertEquals([
             new Reference('fivelab.amqp.queue_factory.delay.expired'),
             new Reference('fivelab.amqp.consumer.delay_expired.message_handler'),
-            new Reference('fivelab.amqp.consumer.delay_expired.middlewares'),
             new Reference('fivelab.amqp.consumer.delay_expired.configuration'),
             new Reference('fivelab.amqp.consumer.delay_expired.strategy'),
         ], \array_values($this->container->getDefinition('fivelab.amqp.consumer.delay_expired')->getArguments()));

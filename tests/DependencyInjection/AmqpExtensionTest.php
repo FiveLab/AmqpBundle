@@ -48,6 +48,7 @@ class AmqpExtensionTest extends AmqpExtensionTestCase
             [
                 new Reference('fivelab.amqp.consumer_registry'),
                 new Reference('fivelab.amqp.consumer_checker_registry'),
+                new Reference('event_dispatcher'),
             ]
         );
 

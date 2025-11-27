@@ -57,6 +57,9 @@ jobs:
                     -   php: 8.4
                         symfony: '~7.0'
 
+                    -   php: 8.5
+                        symfony: '~7.0'
+
 
         steps:
             -   name: Checkout

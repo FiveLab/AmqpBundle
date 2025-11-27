@@ -59,7 +59,7 @@ abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
         }
 
         if (null !== $arguments) {
-            self::assertEquals($arguments, $def->getArguments(), \sprintf('Invalid arguments for definition "%s".', $id));
+            self::assertEquals($arguments, \array_values($def->getArguments()), \sprintf('Invalid arguments for definition "%s".', $id));
         }
 
         if (null !== $factory) {
