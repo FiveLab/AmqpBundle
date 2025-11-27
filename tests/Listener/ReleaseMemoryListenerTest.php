@@ -15,8 +15,6 @@ namespace FiveLab\Bundle\AmqpBundle\Tests\Listener;
 
 use FiveLab\Bundle\AmqpBundle\Listener\ReleaseMemoryListener;
 use FiveLab\Component\Amqp\AmqpEvents;
-use FiveLab\Component\Amqp\Event\ProcessedMessageEvent;
-use FiveLab\Component\Amqp\Event\ReceiveMessageEvent;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Contracts\Service\ResetInterface;

@@ -17,7 +17,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ConnectionRegistry;
 use FiveLab\Bundle\AmqpBundle\Listener\PingDbalConnectionsListener;
 use FiveLab\Component\Amqp\AmqpEvents;
-use FiveLab\Component\Amqp\Event\ConsumerTickEvent;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;

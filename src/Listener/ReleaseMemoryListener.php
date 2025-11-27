@@ -14,8 +14,6 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Listener;
 
 use FiveLab\Component\Amqp\AmqpEvents;
-use FiveLab\Component\Amqp\Event\ProcessedMessageEvent;
-use FiveLab\Component\Amqp\Event\ReceiveMessageEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Contracts\Service\ResetInterface;
 

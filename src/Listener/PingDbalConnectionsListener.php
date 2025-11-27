@@ -16,7 +16,6 @@ namespace FiveLab\Bundle\AmqpBundle\Listener;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ConnectionRegistry;
 use FiveLab\Component\Amqp\AmqpEvents;
-use FiveLab\Component\Amqp\Event\ConsumerTickEvent;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleSignalEvent;
 use Symfony\Component\Console\Output\OutputInterface;
