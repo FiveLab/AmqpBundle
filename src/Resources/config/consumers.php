@@ -11,6 +11,7 @@ use FiveLab\Component\Amqp\Consumer\Strategy\DefaultConsumeStrategy;
 use FiveLab\Component\Amqp\Consumer\Strategy\LoopConsumeStrategy;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\abstract_arg;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container) {
     $container->services()
@@ -31,6 +32,7 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('configuration'),
                 abstract_arg('strategy')
             ])
+            ->call('setEventDispatcher', [service('event_dispatcher')->nullOnInvalid()])
 
         // Spool consumer
         ->set('fivelab.amqp.consumer_spool.configuration.abstract', SpoolConsumerConfiguration::class)
@@ -51,6 +53,7 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('configuration'),
                 abstract_arg('strategy')
             ])
+            ->call('setEventDispatcher', [service('event_dispatcher')->nullOnInvalid()])
 
         // Loop consumer
         ->set('fivelab.amqp.consumer_loop.configuration.abstract', LoopConsumerConfiguration::class)
@@ -70,6 +73,7 @@ return static function (ContainerConfigurator $container) {
                 abstract_arg('configuration'),
                 abstract_arg('strategy')
             ])
+            ->call('setEventDispatcher', [service('event_dispatcher')->nullOnInvalid()])
 
         // Common services
         ->set('fivelab.amqp.consumer.message_handler.abstract', MessageHandlers::class)

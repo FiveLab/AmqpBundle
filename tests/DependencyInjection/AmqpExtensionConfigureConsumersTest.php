@@ -17,6 +17,7 @@ use FiveLab\Component\Amqp\Command\ListConsumersCommand;
 use FiveLab\Component\Amqp\Consumer\Checker\ContainerRunConsumerCheckerRegistry;
 use FiveLab\Component\Amqp\Consumer\Registry\ContainerConsumerRegistry;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Reference;
 
 class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
@@ -75,12 +76,21 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         ]);
 
         // Verify consumer
-        $this->assertService('fivelab.amqp.consumer.foo', '@fivelab.amqp.consumer_single.abstract', [
-            new Reference('fivelab.amqp.queue_factory.default'),
-            new Reference('fivelab.amqp.consumer.foo.message_handler'),
-            new Reference('fivelab.amqp.consumer.foo.configuration'),
-            new Reference('fivelab.amqp.consumer.foo.strategy'),
-        ]);
+        $this->assertService(
+            'fivelab.amqp.consumer.foo',
+            '@fivelab.amqp.consumer_single.abstract',
+            [
+                new Reference('fivelab.amqp.queue_factory.default'),
+                new Reference('fivelab.amqp.consumer.foo.message_handler'),
+                new Reference('fivelab.amqp.consumer.foo.configuration'),
+                new Reference('fivelab.amqp.consumer.foo.strategy'),
+            ],
+            calls: [
+                'setEventDispatcher' => [
+                    [new Reference('event_dispatcher', ContainerInterface::NULL_ON_INVALID_REFERENCE)],
+                ],
+            ]
+        );
 
         // Verify message handler
         $this->assertService('fivelab.amqp.consumer.foo.message_handler', '@fivelab.amqp.consumer.message_handler.abstract', [
@@ -247,12 +257,21 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         $this->assertContainerBuilderHasService('fivelab.amqp.consumer.bar.configuration');
 
         // Verify consumer
-        $this->assertService('fivelab.amqp.consumer.bar', '@fivelab.amqp.consumer_spool.abstract', [
-            new Reference('fivelab.amqp.queue_factory.default'),
-            new Reference('fivelab.amqp.consumer.bar.message_handler'),
-            new Reference('fivelab.amqp.consumer.bar.configuration'),
-            new Reference('fivelab.amqp.consumer.bar.strategy'),
-        ]);
+        $this->assertService(
+            'fivelab.amqp.consumer.bar',
+            '@fivelab.amqp.consumer_spool.abstract',
+            [
+                new Reference('fivelab.amqp.queue_factory.default'),
+                new Reference('fivelab.amqp.consumer.bar.message_handler'),
+                new Reference('fivelab.amqp.consumer.bar.configuration'),
+                new Reference('fivelab.amqp.consumer.bar.strategy'),
+            ],
+            calls: [
+                'setEventDispatcher' => [
+                    [new Reference('event_dispatcher', ContainerInterface::NULL_ON_INVALID_REFERENCE)],
+                ],
+            ]
+        );
 
         // Verify configuration
         $this->assertService('fivelab.amqp.consumer.bar.configuration', '@fivelab.amqp.consumer_spool.configuration.abstract', [
@@ -306,12 +325,21 @@ class AmqpExtensionConfigureConsumersTest extends AmqpExtensionTestCase
         ]);
 
         // Verify consumer
-        $this->assertService('fivelab.amqp.consumer.bar', '@fivelab.amqp.consumer_loop.abstract', [
-            new Reference('fivelab.amqp.queue_factory.default'),
-            new Reference('fivelab.amqp.consumer.bar.message_handler'),
-            new Reference('fivelab.amqp.consumer.bar.configuration'),
-            new Reference('fivelab.amqp.consumer.bar.strategy'),
-        ]);
+        $this->assertService(
+            'fivelab.amqp.consumer.bar',
+            '@fivelab.amqp.consumer_loop.abstract',
+            [
+                new Reference('fivelab.amqp.queue_factory.default'),
+                new Reference('fivelab.amqp.consumer.bar.message_handler'),
+                new Reference('fivelab.amqp.consumer.bar.configuration'),
+                new Reference('fivelab.amqp.consumer.bar.strategy'),
+            ],
+            calls: [
+                'setEventDispatcher' => [
+                    [new Reference('event_dispatcher', ContainerInterface::NULL_ON_INVALID_REFERENCE)],
+                ],
+            ]
+        );
 
         // Verify configuration
         $this->assertService('fivelab.amqp.consumer.bar.configuration', '@fivelab.amqp.consumer_loop.configuration.abstract', [

@@ -15,6 +15,7 @@ namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
+use Symfony\Component\DependencyInjection\ChildDefinition;
 
 abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
 {
@@ -67,7 +68,14 @@ abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
         }
 
         if (null !== $calls) {
-            $defCalls = $def->getMethodCalls();
+            $defCalls = [$def->getMethodCalls()];
+
+            if ($def instanceof ChildDefinition) {
+                $defCalls[] = $this->container->getDefinition($def->getParent())->getMethodCalls();
+            }
+
+            $defCalls = \array_merge(...$defCalls);
+
             $actualCalls = [];
 
             foreach ($defCalls as [$callMethod, $callArguments]) {
