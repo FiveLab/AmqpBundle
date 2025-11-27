@@ -13,6 +13,7 @@ declare(strict_types = 1);
 
 namespace FiveLab\Bundle\AmqpBundle\Listener;
 
+use FiveLab\Component\Amqp\AmqpEvents;
 use FiveLab\Component\Amqp\Event\ProcessedMessageEvent;
 use FiveLab\Component\Amqp\Event\ReceiveMessageEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -27,8 +28,8 @@ readonly class ReleaseMemoryListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            ReceiveMessageEvent::class   => ['onReceiveMessage', 1024],
-            ProcessedMessageEvent::class => ['onProcessedMessage', -1024],
+            AmqpEvents::RECEIVE_MESSAGE   => ['onReceiveMessage', 1024],
+            AmqpEvents::PROCESSED_MESSAGE => ['onProcessedMessage', -1024],
         ];
     }
 

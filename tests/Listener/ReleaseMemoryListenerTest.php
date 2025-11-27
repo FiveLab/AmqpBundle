@@ -14,6 +14,7 @@ declare(strict_types = 1);
 namespace FiveLab\Bundle\AmqpBundle\Tests\Listener;
 
 use FiveLab\Bundle\AmqpBundle\Listener\ReleaseMemoryListener;
+use FiveLab\Component\Amqp\AmqpEvents;
 use FiveLab\Component\Amqp\Event\ProcessedMessageEvent;
 use FiveLab\Component\Amqp\Event\ReceiveMessageEvent;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,8 +27,8 @@ class ReleaseMemoryListenerTest extends TestCase
     public function shouldSuccessGetListeners(): void
     {
         self::assertEquals([
-            ReceiveMessageEvent::class   => ['onReceiveMessage', 1024],
-            ProcessedMessageEvent::class => ['onProcessedMessage', -1024],
+            AmqpEvents::RECEIVE_MESSAGE   => ['onReceiveMessage', 1024],
+            AmqpEvents::PROCESSED_MESSAGE => ['onProcessedMessage', -1024],
         ], ReleaseMemoryListener::getSubscribedEvents());
     }
 

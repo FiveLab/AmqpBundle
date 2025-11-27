@@ -15,6 +15,7 @@ namespace FiveLab\Bundle\AmqpBundle\Listener;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ConnectionRegistry;
+use FiveLab\Component\Amqp\AmqpEvents;
 use FiveLab\Component\Amqp\Event\ConsumerTickEvent;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleSignalEvent;
@@ -37,8 +38,8 @@ readonly class PingDbalConnectionsListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            ConsoleEvents::SIGNAL    => ['onConsoleSignal', 0],
-            ConsumerTickEvent::class => ['onConsumerTick', 0],
+            ConsoleEvents::SIGNAL     => ['onConsoleSignal', 0],
+            AmqpEvents::CONSUMER_TICK => ['onConsumerTick', 0],
         ];
     }
 
