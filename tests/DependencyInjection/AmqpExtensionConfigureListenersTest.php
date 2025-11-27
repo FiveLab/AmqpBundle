@@ -15,6 +15,7 @@ namespace FiveLab\Bundle\AmqpBundle\Tests\DependencyInjection;
 
 use FiveLab\Bundle\AmqpBundle\Listener\PingDbalConnectionsListener;
 use FiveLab\Bundle\AmqpBundle\Listener\ReleaseMemoryListener;
+use FiveLab\Component\Amqp\Listener\OutputListener;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use Symfony\Component\DependencyInjection\Reference;
@@ -24,6 +25,20 @@ class AmqpExtensionConfigureListenersTest extends AmqpExtensionTestCase
     protected function getMinimalConfiguration(): array
     {
         return [];
+    }
+
+    #[Test]
+    public function shouldNoConfigureListeners(): void
+    {
+        $this->load([
+            'listeners' => [
+                'output' => false,
+            ],
+        ]);
+
+        $this->assertContainerBuilderNotHasService(ReleaseMemoryListener::class);
+        $this->assertContainerBuilderNotHasService(PingDbalConnectionsListener::class);
+        $this->assertContainerBuilderNotHasService(OutputListener::class);
     }
 
     #[Test]
@@ -62,5 +77,19 @@ class AmqpExtensionConfigureListenersTest extends AmqpExtensionTestCase
         ]);
 
         $this->assertContainerBuilderHasServiceDefinitionWithTag(PingDbalConnectionsListener::class, 'kernel.event_subscriber');
+    }
+
+    #[Test]
+    public function shouldSuccessConfigureOutputListener(): void
+    {
+        $this->load([
+            'listeners' => [
+                'output' => true,
+            ],
+        ]);
+
+        $this->assertService(OutputListener::class, OutputListener::class);
+
+        $this->assertContainerBuilderHasServiceDefinitionWithTag(OutputListener::class, 'kernel.event_subscriber');
     }
 }

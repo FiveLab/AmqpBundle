@@ -21,6 +21,7 @@ use FiveLab\Component\Amqp\Connection\ConnectionFactoryInterface;
 use FiveLab\Component\Amqp\Connection\Dsn;
 use FiveLab\Component\Amqp\Exchange\Definition\Arguments\AlternateExchangeArgument;
 use FiveLab\Component\Amqp\Exchange\ExchangeFactoryInterface;
+use FiveLab\Component\Amqp\Listener\OutputListener;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterExchangeArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\DeadLetterRoutingKeyArgument;
 use FiveLab\Component\Amqp\Queue\Definition\Arguments\ExpiresArgument;
@@ -148,6 +149,13 @@ class AmqpExtension extends Extension
                 ->addTag('kernel.event_subscriber');
 
             $container->setDefinition(PingDbalConnectionsListener::class, $def);
+        }
+
+        if ($listeners['output']) {
+            $def = (new Definition(OutputListener::class))
+                ->addTag('kernel.event_subscriber');
+
+            $container->setDefinition(OutputListener::class, $def);
         }
     }
 

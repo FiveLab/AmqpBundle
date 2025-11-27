@@ -69,6 +69,11 @@ readonly class Configuration implements ConfigurationInterface
                         ->thenInvalid('Invalid value for "ping_dbal_connections". Must be integer or null.')
                     ->end()
                 ->end()
+
+                ->booleanNode('output')
+                    ->defaultValue(true)
+                    ->info('Enable/disable output listener.')
+                ->end()
             ->end();
 
         return $node;
