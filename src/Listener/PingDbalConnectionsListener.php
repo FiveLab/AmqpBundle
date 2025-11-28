@@ -17,7 +17,7 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ConnectionRegistry;
 use FiveLab\Component\Amqp\AmqpEvents;
 use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\Console\Event\ConsoleSignalEvent;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
@@ -25,10 +25,9 @@ readonly class PingDbalConnectionsListener implements EventSubscriberInterface
 {
     private \ArrayObject $options;
 
-    public function __construct(private ConnectionRegistry $registry, private int $interval, private array $signals = [\SIGALRM])
+    public function __construct(private ConnectionRegistry $registry, private int $interval)
     {
         $this->options = new \ArrayObject([
-            'ping'      => false,
             'last_ping' => \time(),
             'output'    => null,
         ]);
@@ -37,32 +36,24 @@ readonly class PingDbalConnectionsListener implements EventSubscriberInterface
     public static function getSubscribedEvents(): array
     {
         return [
-            ConsoleEvents::SIGNAL     => ['onConsoleSignal', 0],
+            ConsoleEvents::COMMAND    => ['onConsoleCommand', 0],
             AmqpEvents::CONSUMER_TICK => ['onConsumerTick', 0],
         ];
     }
 
-    public function onConsoleSignal(ConsoleSignalEvent $event): void
+    public function onConsoleCommand(ConsoleCommandEvent $event): void
     {
-        if (!\in_array($event->getHandlingSignal(), $this->signals, true)) {
-            return;
-        }
-
-        $nextPing = $this->options['last_ping'] + $this->interval;
-
-        if ($nextPing < \time()) {
-            $this->options->offsetSet('ping', true);
-            $this->options->offsetSet('output', $event->getOutput());
-        }
+        $this->options->offsetSet('output', $event->getOutput());
     }
 
     public function onConsumerTick(): void
     {
-        if (!$this->options['ping']) {
+        $nextPing = $this->options['last_ping'] + $this->interval;
+
+        if ($nextPing > \time()) {
             return;
         }
 
-        $this->options->offsetSet('ping', false);
         $this->options->offsetSet('last_ping', \time());
 
         /** @var Connection $connection */

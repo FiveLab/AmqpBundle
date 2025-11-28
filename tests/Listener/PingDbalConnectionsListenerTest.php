@@ -17,13 +17,12 @@ use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ConnectionRegistry;
 use FiveLab\Bundle\AmqpBundle\Listener\PingDbalConnectionsListener;
 use FiveLab\Component\Amqp\AmqpEvents;
-use PHPUnit\Framework\Attributes\RequiresPhpExtension;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\ConsoleEvents;
-use Symfony\Component\Console\Event\ConsoleSignalEvent;
+use Symfony\Component\Console\Event\ConsoleCommandEvent;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -34,13 +33,12 @@ class PingDbalConnectionsListenerTest extends TestCase
     public function shouldSuccessGetListeners(): void
     {
         self::assertEquals([
-            ConsoleEvents::SIGNAL     => ['onConsoleSignal', 0],
+            ConsoleEvents::COMMAND    => ['onConsoleCommand', 0],
             AmqpEvents::CONSUMER_TICK => ['onConsumerTick', 0],
         ], PingDbalConnectionsListener::getSubscribedEvents());
     }
 
     #[Test]
-    #[RequiresPhpExtension('pcntl')]
     #[TestWith([OutputInterface::VERBOSITY_DEBUG, true])]
     #[TestWith([OutputInterface::VERBOSITY_VERBOSE, false])]
     public function shouldSuccessPing(int $verbose, bool $expectedOutput): void
@@ -51,11 +49,11 @@ class PingDbalConnectionsListenerTest extends TestCase
             'conn3' => $this->makeConnection(true, true),
         ]);
 
-        $consoleEvent = $this->makeConsoleSignalEvent($output = new BufferedOutput($verbose));
+        $consoleEvent = $this->makeConsoleCommandEvent($output = new BufferedOutput($verbose));
 
         $listener = new PingDbalConnectionsListener($registry, 60);
         $this->changeLastPingTime($listener, \time() - 61);
-        $listener->onConsoleSignal($consoleEvent);
+        $listener->onConsoleCommand($consoleEvent);
         $listener->onConsumerTick();
 
         $expectedOutputBuffer = '';
@@ -73,7 +71,6 @@ OUTPUT;
     }
 
     #[Test]
-    #[RequiresPhpExtension('pcntl')]
     public function shouldNotPingForSmallInterval(): void
     {
         $registry = $this->makeRegistry([
@@ -81,27 +78,11 @@ OUTPUT;
             'conn2' => $this->makeConnection(null, false),
         ]);
 
-        $consoleEvent = $this->makeConsoleSignalEvent(new BufferedOutput());
+        $consoleEvent = $this->makeConsoleCommandEvent(new BufferedOutput());
 
         $listener = new PingDbalConnectionsListener($registry, 60);
         $this->changeLastPingTime($listener, \time() - 30);
-        $listener->onConsoleSignal($consoleEvent);
-        $listener->onConsumerTick();
-    }
-
-    #[Test]
-    public function shouldIgnoreForWrongSignal(): void
-    {
-        $registry = $this->makeRegistry([
-            'conn1' => $this->makeConnection(null, false),
-            'conn2' => $this->makeConnection(null, false),
-        ]);
-
-        $consoleEvent = $this->makeConsoleSignalEvent(new BufferedOutput(), \SIGINT);
-
-        $listener = new PingDbalConnectionsListener($registry, 60, [\SIGUSR1]);
-        $this->changeLastPingTime($listener, \time() - 100);
-        $listener->onConsoleSignal($consoleEvent);
+        $listener->onConsoleCommand($consoleEvent);
         $listener->onConsumerTick();
     }
 
@@ -123,9 +104,9 @@ OUTPUT;
         return $options->offsetGet('last_ping');
     }
 
-    private function makeConsoleSignalEvent(BufferedOutput $output, int $signal = \SIGALRM): ConsoleSignalEvent
+    private function makeConsoleCommandEvent(BufferedOutput $output): ConsoleCommandEvent
     {
-        return new ConsoleSignalEvent($this->createMock(Command::class), $this->createMock(InputInterface::class), $output, $signal);
+        return new ConsoleCommandEvent($this->createMock(Command::class), $this->createMock(InputInterface::class), $output);
     }
 
     private function makeRegistry(array $connections): ConnectionRegistry
