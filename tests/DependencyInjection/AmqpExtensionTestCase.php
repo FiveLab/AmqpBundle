@@ -17,7 +17,7 @@ use FiveLab\Bundle\AmqpBundle\DependencyInjection\AmqpExtension;
 use Matthias\SymfonyDependencyInjectionTest\PhpUnit\AbstractExtensionTestCase;
 use Symfony\Component\DependencyInjection\ChildDefinition;
 
-abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase
+abstract class AmqpExtensionTestCase extends AbstractExtensionTestCase // phpcs:ignore Generic.NamingConventions.AbstractClassNamePrefix.Missing
 {
     protected function setUp(): void
     {

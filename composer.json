@@ -19,8 +19,8 @@
     ],
 
     "require": {
-        "php": "^8.2",
-        "fivelab/amqp": "~2.3.0",
+        "php": "^8.4",
+        "fivelab/amqp": "~2.4.0",
         "symfony/dependency-injection": "~6.4 | ~7.0 | ~8.0",
         "symfony/framework-bundle": "~6.4 | ~7.0 | ~8.0"
     },
